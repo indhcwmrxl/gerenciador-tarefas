@@ -1,11 +1,4 @@
-# Gerenciador de Tarefas — Módulo 1 (Computação em Nuvem)
-
-Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).
-Domínio: **Gerenciador de tarefas** (entidade central: `task`, com evento natural de mudança de estado "tarefa concluída", que será usado no Módulo 4).
-
-- 🌐 **URL pública:** `https://SEU-APP.onrender.com`  <!-- TROCAR -->
-- 🎥 **Vídeo de demonstração:** `https://youtu.be/SEU-VIDEO` (não listado) <!-- TROCAR -->
-- 👥 **Grupo:** NOME 1, NOME 2, NOME 3 <!-- TROCAR -->
+# Gerenciador de Tarefas
 
 ## Tecnologias
 - Node.js + Express
