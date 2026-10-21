@@ -1,5 +1,8 @@
 # Gerenciador de Tarefas
 
+## Link do Vídeo
+[Assistir ao vídeo no YouTube](https://www.youtube.com/watch?v=qKR3ZISvTng)
+
 ## Tecnologias
 - Node.js + Express
 - PostgreSQL gerenciado (Neon, free tier)
