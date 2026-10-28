@@ -6,8 +6,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-// Bancos gerenciados (Neon, Supabase, Render) exigem SSL.
-// Para banco local, defina PGSSL=false no .env
+// Bancos gerenciados (Neon) exigem SSL. Para banco local sem SSL, use PGSSL=false
 const useSSL = process.env.PGSSL !== 'false';
 
 const pool = new Pool({
@@ -24,10 +23,13 @@ async function init() {
       status      VARCHAR(20) NOT NULL DEFAULT 'pendente'
                   CHECK (status IN ('pendente','em_andamento','concluida')),
       responsavel VARCHAR(100),
+      responsavel_id INTEGER,
       criada_em   TIMESTAMP NOT NULL DEFAULT NOW(),
       atualizada_em TIMESTAMP NOT NULL DEFAULT NOW()
     );
   `);
+  // Bancos criados no Módulo 1 ainda não têm a coluna responsavel_id
+  await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS responsavel_id INTEGER');
 }
 
 module.exports = { pool, init };
