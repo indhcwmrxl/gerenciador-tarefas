@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="azul" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#2f6db5"/></marker>
+    <marker id="verde" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#2e7d4f"/></marker>
+    <marker id="laranja" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#c8691a"/></marker>
+  </defs>
+  <rect width="900" height="540" fill="#ffffff"/>
+  <text x="450" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f3a5f">Arquitetura de microsserviços: Gerenciador de Tarefas</text>
+
+  <rect x="340" y="62" width="220" height="62" rx="10" fill="#e3eefb" stroke="#1f3a5f" stroke-width="2"/>
+  <text x="450" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f3a5f">Cliente</text>
+  <text x="450" y="110" text-anchor="middle" font-size="12" fill="#555555">navegador, PowerShell, Postman</text>
+
+  <line x1="450" y1="124" x2="450" y2="196" stroke="#2f6db5" stroke-width="2.5" marker-end="url(#azul)"/>
+  <text x="462" y="165" font-size="12" fill="#2f6db5">HTTPS (CRUD /tasks)</text>
+
+  <rect x="20" y="200" width="200" height="120" rx="10" fill="#e5f4ea" stroke="#1f3a5f" stroke-width="2"/>
+  <text x="120" y="232" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f3a5f">users-service</text>
+  <text x="120" y="260" text-anchor="middle" font-size="12" fill="#555555">Usuários (CRUD)</text>
+  <text x="120" y="278" text-anchor="middle" font-size="12" fill="#555555">Responsáveis pelas tarefas</text>
+
+  <rect x="350" y="200" width="200" height="120" rx="10" fill="#e5f4ea" stroke="#1f3a5f" stroke-width="2"/>
+  <text x="450" y="232" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f3a5f">tasks-service</text>
+  <text x="450" y="256" text-anchor="middle" font-size="12" fill="#555555">Tarefas (CRUD)</text>
+  <text x="450" y="274" text-anchor="middle" font-size="12" fill="#555555">Valida o responsável</text>
+  <text x="450" y="292" text-anchor="middle" font-size="12" fill="#555555">e envia os avisos</text>
+
+  <rect x="680" y="200" width="200" height="120" rx="10" fill="#e5f4ea" stroke="#1f3a5f" stroke-width="2"/>
+  <text x="780" y="232" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f3a5f">notifications-service</text>
+  <text x="780" y="260" text-anchor="middle" font-size="12" fill="#555555">Avisos (registro)</text>
+  <text x="780" y="278" text-anchor="middle" font-size="12" fill="#555555">Tarefa atribuída / concluída</text>
+
+  <line x1="350" y1="260" x2="222" y2="260" stroke="#2e7d4f" stroke-width="2.5" marker-end="url(#verde)"/>
+  <text x="286" y="250" text-anchor="middle" font-size="12" fill="#2e7d4f">GET /users/:id</text>
+  <line x1="550" y1="260" x2="678" y2="260" stroke="#2e7d4f" stroke-width="2.5" marker-end="url(#verde)"/>
+  <text x="614" y="250" text-anchor="middle" font-size="12" fill="#2e7d4f">POST /notifications</text>
+
+  <line x1="120" y1="320" x2="120" y2="396" stroke="#c8691a" stroke-width="2.5" marker-end="url(#laranja)"/>
+  <text x="132" y="362" font-size="12" fill="#c8691a">SQL</text>
+  <line x1="450" y1="320" x2="450" y2="396" stroke="#c8691a" stroke-width="2.5" marker-end="url(#laranja)"/>
+  <text x="462" y="362" font-size="12" fill="#c8691a">SQL</text>
+  <line x1="780" y1="320" x2="780" y2="396" stroke="#c8691a" stroke-width="2.5" marker-end="url(#laranja)"/>
+  <text x="792" y="362" font-size="12" fill="#c8691a">SQL</text>
+
+  <path d="M60,410 v60 a60,12 0 0 0 120,0 v-60" fill="#fdeedd" stroke="#c8691a" stroke-width="2"/>
+  <ellipse cx="120" cy="410" rx="60" ry="12" fill="#fff6ea" stroke="#c8691a" stroke-width="2"/>
+  <text x="120" y="442" text-anchor="middle" font-size="13" font-weight="bold" fill="#c8691a">users-db</text>
+  <text x="120" y="460" text-anchor="middle" font-size="11" fill="#555555">tabela users</text>
+
+  <path d="M390,410 v60 a60,12 0 0 0 120,0 v-60" fill="#fdeedd" stroke="#c8691a" stroke-width="2"/>
+  <ellipse cx="450" cy="410" rx="60" ry="12" fill="#fff6ea" stroke="#c8691a" stroke-width="2"/>
+  <text x="450" y="442" text-anchor="middle" font-size="13" font-weight="bold" fill="#c8691a">tasks-db</text>
+  <text x="450" y="460" text-anchor="middle" font-size="11" fill="#555555">tabela tasks</text>
+
+  <path d="M720,410 v60 a60,12 0 0 0 120,0 v-60" fill="#fdeedd" stroke="#c8691a" stroke-width="2"/>
+  <ellipse cx="780" cy="410" rx="60" ry="12" fill="#fff6ea" stroke="#c8691a" stroke-width="2"/>
+  <text x="780" y="442" text-anchor="middle" font-size="13" font-weight="bold" fill="#c8691a">notifications-db</text>
+  <text x="780" y="460" text-anchor="middle" font-size="11" fill="#555555">tabela notifications</text>
+
+  <rect x="20" y="498" width="860" height="30" fill="#f4f4f2" stroke="#cccccc"/>
+  <text x="34" y="517" font-size="12" fill="#555555">Serviços: Railway (um por pasta)</text>
+  <text x="300" y="517" font-size="12" fill="#555555">Bancos: Neon (PostgreSQL), um por serviço</text>
+  <text x="620" y="517" font-size="12" fill="#2e7d4f">Verde: chamadas HTTP entre serviços</text>
+</svg>
