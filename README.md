@@ -6,7 +6,6 @@ Domínio: **gerenciador de tarefas** (evento natural: "tarefa concluída", usado
 
 Neste módulo, a API única do Módulo 1 foi dividida em **3 microsserviços independentes**, cada um com seu código e seu banco de dados, que se comunicam por **HTTP/REST**. O Módulo 1 continua preservado na tag `entrega-1-cloud`.
 
-- Grupo: NOME 1, NOME 2, NOME 3 <!-- TROCAR -->
 
 ## Tecnologias e serviços utilizados
 
