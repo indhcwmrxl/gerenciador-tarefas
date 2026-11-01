@@ -1,0 +1,15 @@
+{
+  "name": "gerenciador-tarefas-monorepo",
+  "version": "2.1.0",
+  "description": "Gerenciador de Tarefas Distribuído com Frontend e Microsserviços (UERN)",
+  "private": true,
+  "scripts": {
+    "start": "node start-all.js",
+    "dev": "node start-all.js",
+    "build": "cd frontend && npm run build",
+    "install:all": "cd users-service && npm i && cd ../notifications-service && npm i && cd ../tasks-service && npm i && cd ../frontend && npm i"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
