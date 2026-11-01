@@ -151,7 +151,7 @@ export function TaskDetailModal({ isOpen, onClose, taskId }) {
                     ? 'text-rose-500 font-bold'
                     : 'text-brand-600 dark:text-brand-400'
                 }`}>
-                  Prazo: {new Date(taskCompleta.prazo).toLocaleDateString('pt-BR')}
+                  Prazo: {new Date(taskCompleta.prazo).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                   {taskCompleta.status !== 'concluida' && new Date(taskCompleta.prazo) < new Date() && ' (Vencido)'}
                 </span>
               )}

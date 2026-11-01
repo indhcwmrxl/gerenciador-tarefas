@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Zap } from 'lucide-react';
 
+function formatForDateTimeLocal(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, currentUser }) {
   const [titulo,    setTitulo]    = useState('');
   const [descricao, setDescricao] = useState('');
@@ -16,7 +29,7 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
       setDescricao(taskToEdit.descricao || '');
       setStatus(taskToEdit.status || 'pendente');
       setPrioridade(taskToEdit.prioridade || 'media');
-      setPrazo(taskToEdit.prazo ? taskToEdit.prazo.slice(0, 10) : '');
+      setPrazo(formatForDateTimeLocal(taskToEdit.prazo));
     } else {
       setTitulo('');
       setDescricao('');
@@ -41,7 +54,7 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
         descricao: descricao.trim() || null,
         status,
         prioridade,
-        prazo: prazo || null,
+        prazo: prazo ? new Date(prazo).toISOString() : null,
         responsavel_id: currentUser?.id,
       });
       onClose();
@@ -153,13 +166,12 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
 
           <div>
             <label className="block text-[11px] font-black mb-1 tracking-wide uppercase"
-                   style={{ color: 'var(--text-muted)' }}>Prazo (opcional)</label>
+                   style={{ color: 'var(--text-muted)' }}>Prazo e Horário (opcional)</label>
             <input
-              type="date"
+              type="datetime-local"
               value={prazo}
               onChange={(e) => setPrazo(e.target.value)}
               className="w-full px-3 py-2 rounded-lg layer-input"
-              min={new Date().toISOString().slice(0, 10)}
             />
           </div>
 

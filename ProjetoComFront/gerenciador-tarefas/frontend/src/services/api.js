@@ -117,11 +117,11 @@ export const apiTasks = {
     return request(`${tasksUrl}/tasks/${id}/completo`);
   },
 
-  async create({ titulo, descricao, status, responsavel_id, prioridade }) {
+  async create({ titulo, descricao, status, responsavel_id, prioridade, prazo }) {
     const { tasksUrl } = getApiUrls();
     return request(`${tasksUrl}/tasks`, {
       method: 'POST',
-      body: JSON.stringify({ titulo, descricao, status, responsavel_id, prioridade }),
+      body: JSON.stringify({ titulo, descricao, status, responsavel_id, prioridade, prazo }),
     });
   },
 

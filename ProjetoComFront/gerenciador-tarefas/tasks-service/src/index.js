@@ -195,7 +195,7 @@ app.put('/tasks/:id', async (req, res) => {
          responsavel    = COALESCE($4, responsavel),
          responsavel_id = COALESCE($5, responsavel_id),
          prioridade     = COALESCE($6, prioridade),
-         prazo          = CASE WHEN $8::boolean THEN $7::date ELSE prazo END,
+         prazo          = CASE WHEN $8::boolean THEN $7::timestamptz ELSE prazo END,
          atualizada_em  = NOW()
        WHERE id=$9 RETURNING *`,
       [titulo, descricao, status, novoNome, novoRespId, prioridade, prazo || null, prazo !== undefined, id]

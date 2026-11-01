@@ -31,7 +31,18 @@ async function init() {
   // Bancos criados no Módulo 1 ainda não têm a coluna responsavel_id
   await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS responsavel_id INTEGER');
   await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS prioridade VARCHAR(20) DEFAULT \'media\'');
-  await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS prazo DATE');
+  await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS prazo TIMESTAMP WITH TIME ZONE');
+  await pool.query(`
+    DO $$ 
+    BEGIN 
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'tasks' AND column_name = 'prazo' AND data_type = 'date'
+      ) THEN 
+        ALTER TABLE tasks ALTER COLUMN prazo TYPE TIMESTAMP WITH TIME ZONE USING prazo::timestamp with time zone;
+      END IF;
+    END $$;
+  `);
 }
 
 module.exports = { pool, init };

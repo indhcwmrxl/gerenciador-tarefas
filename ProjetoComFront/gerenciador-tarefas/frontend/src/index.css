@@ -289,14 +289,16 @@ select.layer-input option {
 }
 
 /* ═══════════════════════════════════════════════════════
-   DATE INPUT STYLING
+   DATE & TIME INPUT STYLING
 ═══════════════════════════════════════════════════════ */
-input[type="date"].layer-input::-webkit-calendar-picker-indicator {
+input[type="date"].layer-input::-webkit-calendar-picker-indicator,
+input[type="datetime-local"].layer-input::-webkit-calendar-picker-indicator {
   filter: opacity(0.4);
   cursor: pointer;
 }
 
-.dark input[type="date"].layer-input::-webkit-calendar-picker-indicator {
+.dark input[type="date"].layer-input::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"].layer-input::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.4);
 }
 

@@ -25,13 +25,23 @@ export function TaskCard({ task, onStatusChange, onViewDetails, onEdit, onDelete
 
   const prio = priorityConfig[task.prioridade] || priorityConfig.media;
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString('pt-BR', { 
+      day: '2-digit', 
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
   const prazoVencido = task.prazo && task.status !== 'concluida' && new Date(task.prazo) < new Date();
-  const prazoLabel = task.prazo ? formatDate(task.prazo) : null;
+  const prazoLabel = task.prazo ? formatDateTime(task.prazo) : null;
 
   return (
     <div className="group layer-card layer-card-interactive rounded-xl p-3.5 space-y-2.5 relative overflow-hidden">
