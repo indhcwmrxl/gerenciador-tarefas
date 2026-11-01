@@ -7,7 +7,10 @@ import {
   Sun,
   Moon,
   ArrowRight,
-  Zap
+  Zap,
+  Lock,
+  Mail,
+  User
 } from 'lucide-react';
 import { apiUsers } from '../services/api';
 
@@ -56,105 +59,62 @@ export function AuthView({ onLoginSuccess, isDark, onToggleTheme }) {
     }
   };
 
-  const activeTabStyle = {
-    background: 'linear-gradient(135deg, rgba(232,244,0,0.15), rgba(147,51,234,0.2))',
-    color: '#ca8a04',
-    border: '1px solid rgba(232,244,0,0.3)',
-  };
-  const activeDarkTabStyle = {
-    background: 'linear-gradient(135deg, rgba(232,244,0,0.15), rgba(147,51,234,0.2))',
-    color: '#e8f400',
-    border: '1px solid rgba(232,244,0,0.3)',
-  };
-  const activeTab = isDark ? activeDarkTabStyle : activeTabStyle;
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
-         style={{ background: 'var(--bg-canvas)' }}>
-
-      {/* BACKGROUND LAYERS */}
-      <div className="hero-glow" />
-      <div className="bg-grid-pattern absolute inset-0" />
-      <div className="scan-overlay" />
-
-      {/* DECORATIVE ORBS */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full blur-3xl pointer-events-none"
-           style={{
-             background: 'radial-gradient(circle, rgba(147,51,234,0.25), transparent)',
-             animation: 'float 3s ease-in-out infinite',
-           }} />
-      <div className="absolute bottom-20 right-10 w-48 h-48 rounded-full blur-3xl pointer-events-none"
-           style={{
-             background: 'radial-gradient(circle, rgba(232,244,0,0.15), transparent)',
-             animation: 'float 3s ease-in-out 1.5s infinite',
-           }} />
-
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
+      
       {/* THEME TOGGLE */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-5 right-5 z-20">
         <button
           onClick={onToggleTheme}
-          className="p-2 rounded-lg transition-all"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-secondary)',
-          }}
+          className="p-2 rounded-xl glass-panel text-slate-600 dark:text-sky-300 hover:text-sky-500 transition-all shadow-md"
           title={isDark ? 'Tema Claro' : 'Tema Escuro'}
         >
-          {isDark ? <Sun className="w-4 h-4" style={{ color: '#e8f400' }} /> : <Moon className="w-4 h-4" />}
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
       </div>
 
       {/* AUTH CARD */}
-      <div className="relative z-10 w-full max-w-[380px]"
-           style={{
-             background: 'var(--modal-bg)',
-             border: '1px solid var(--border-color)',
-             borderRadius: '1.25rem',
-             padding: '2rem 1.75rem',
-             boxShadow: 'var(--modal-shadow)',
-             animation: 'scaleUp 0.22s cubic-bezier(0.16,1,0.3,1)',
-           }}>
-
-        {/* TOP ACCENT LINE */}
-        <div className="absolute top-0 left-8 right-8 h-[2px] rounded-full"
-             style={{ background: 'linear-gradient(90deg, transparent, #9333ea, #e8f400, transparent)' }} />
-
+      <div className="relative z-10 w-full max-w-sm glass-panel rounded-2xl p-7 shadow-2xl border border-sky-400/30 frost-sheen animate-scale-up">
+        
         {/* LOGO & HEADING */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="relative w-12 h-12 rounded-xl mb-3 flex items-center justify-center"
-               style={{
-                 background: 'linear-gradient(135deg, #e8f400 0%, #9333ea 100%)',
-                 boxShadow: '0 0 20px rgba(232,244,0,0.35)',
-                 animation: 'glowPulse 2.4s ease-in-out infinite',
-               }}>
-            <Zap className="w-5 h-5 text-black" strokeWidth={2.5} />
+          <div className="w-12 h-12 rounded-xl bg-sky-500/20 border border-sky-400/50 flex items-center justify-center glow-cyan shadow-[0_0_20px_rgba(125,211,252,0.4)] mb-3">
+            <Zap className="w-6 h-6 text-sky-600 dark:text-primary fill-current" />
           </div>
-
-          <h1 className="text-xl font-black" style={{ color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-            {isRegister ? 'Criar nova conta' : 'Entrar no TaskFlow'}
-          </h1>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-            {isRegister ? 'Configure seu espaço de trabalho' : 'Acesse suas tarefas e projetos'}
+          <div className="flex items-center gap-1.5 justify-center">
+            <h1 className="text-xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
+              TaskFlow
+            </h1>
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-sky-400/15 text-sky-700 dark:text-primary border border-sky-400/30">
+              PRO
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-on-surface-variant mt-1 font-mono">
+            {isRegister ? 'Criar novo acesso executivo' : 'Entre no seu Workspace Individual'}
           </p>
         </div>
 
         {/* SEGMENTED SWITCH */}
-        <div className="grid grid-cols-2 p-0.5 rounded-lg mb-5"
-             style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-color)' }}>
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-200/80 dark:bg-[#0a1224]/80 border border-slate-300 dark:border-sky-400/15 mb-5 text-xs font-semibold">
           <button
             type="button"
             onClick={() => { setIsRegister(false); setErro(''); }}
-            className="py-1.5 text-xs font-bold rounded-md transition-all"
-            style={!isRegister ? activeTab : { color: 'var(--text-muted)' }}
+            className={`py-1.5 rounded-lg transition-all ${
+              !isRegister
+                ? 'bg-sky-400 text-slate-950 shadow-[0_0_12px_rgba(125,211,252,0.4)] font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+            }`}
           >
             Entrar
           </button>
           <button
             type="button"
             onClick={() => { setIsRegister(true); setErro(''); }}
-            className="py-1.5 text-xs font-bold rounded-md transition-all"
-            style={isRegister ? activeTab : { color: 'var(--text-muted)' }}
+            className={`py-1.5 rounded-lg transition-all ${
+              isRegister
+                ? 'bg-sky-400 text-slate-950 shadow-[0_0_12px_rgba(125,211,252,0.4)] font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+            }`}
           >
             Criar conta
           </button>
@@ -162,111 +122,115 @@ export function AuthView({ onLoginSuccess, isDark, onToggleTheme }) {
 
         {/* ERROR */}
         {erro && (
-          <div className="mb-4 p-2.5 rounded-lg flex items-center gap-2 text-xs"
-               style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626' }}>
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <div className="mb-4 p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-mono flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{erro}</span>
           </div>
         )}
 
         {/* FORM */}
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           
           {isRegister && (
             <div>
-              <label className="block text-[11px] font-black mb-1 tracking-wide uppercase"
-                     style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-[11px] font-mono font-semibold mb-1 text-slate-600 dark:text-sky-200/80 uppercase tracking-wider">
                 Nome completo
               </label>
-              <input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex: Carlos Silva"
-                className="w-full px-3 py-2 rounded-lg layer-input"
-                required
-              />
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-400 dark:text-sky-300/60 absolute left-3 top-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Ex: João Lucas"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-100 dark:bg-[#0e172a]/80 border border-slate-300 dark:border-sky-400/20 text-xs text-slate-900 dark:text-on-surface focus:outline-none focus:ring-1 focus:ring-sky-400/60 focus:border-sky-400 transition-all"
+                  required
+                />
+              </div>
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-black mb-1 tracking-wide uppercase"
-                   style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-[11px] font-mono font-semibold mb-1 text-slate-600 dark:text-sky-200/80 uppercase tracking-wider">
               E-mail
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nome@exemplo.com"
-              className="w-full px-3 py-2 rounded-lg layer-input"
-              required
-            />
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-400 dark:text-sky-300/60 absolute left-3 top-2.5 pointer-events-none" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nome@empresa.com"
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-100 dark:bg-[#0e172a]/80 border border-slate-300 dark:border-sky-400/20 text-xs text-slate-900 dark:text-on-surface focus:outline-none focus:ring-1 focus:ring-sky-400/60 focus:border-sky-400 transition-all"
+                required
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-black mb-1 tracking-wide uppercase"
-                   style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-[11px] font-mono font-semibold mb-1 text-slate-600 dark:text-sky-200/80 uppercase tracking-wider">
               Senha
             </label>
             <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 dark:text-sky-300/60 absolute left-3 top-2.5 pointer-events-none" />
               <input
                 type={showSenha ? 'text' : 'password'}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 pr-9 rounded-lg layer-input"
+                className="w-full pl-9 pr-9 py-2 rounded-lg bg-slate-100 dark:bg-[#0e172a]/80 border border-slate-300 dark:border-sky-400/20 text-xs text-slate-900 dark:text-on-surface focus:outline-none focus:ring-1 focus:ring-sky-400/60 focus:border-sky-400 transition-all font-mono"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowSenha(!showSenha)}
-                className="absolute inset-y-0 right-0 pr-2.5 flex items-center transition-all"
-                style={{ color: 'var(--text-muted)' }}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-sky-300 transition-colors"
               >
-                {showSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
           {isRegister && (
             <div>
-              <label className="block text-[11px] font-black mb-1 tracking-wide uppercase"
-                     style={{ color: 'var(--text-muted)' }}>
-                Confirmação de senha
+              <label className="block text-[11px] font-mono font-semibold mb-1 text-slate-600 dark:text-sky-200/80 uppercase tracking-wider">
+                Confirmar Senha
               </label>
-              <input
-                type={showSenha ? 'text' : 'password'}
-                value={confirmSenha}
-                onChange={(e) => setConfirmSenha(e.target.value)}
-                placeholder="Repita a senha"
-                className="w-full px-3 py-2 rounded-lg layer-input"
-                required
-              />
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 dark:text-sky-300/60 absolute left-3 top-2.5 pointer-events-none" />
+                <input
+                  type={showSenha ? 'text' : 'password'}
+                  value={confirmSenha}
+                  onChange={(e) => setConfirmSenha(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-100 dark:bg-[#0e172a]/80 border border-slate-300 dark:border-sky-400/20 text-xs text-slate-900 dark:text-on-surface focus:outline-none focus:ring-1 focus:ring-sky-400/60 focus:border-sky-400 transition-all font-mono"
+                  required
+                />
+              </div>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="btn-neon w-full mt-3 py-2.5 px-4 rounded-lg text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="w-full mt-4 py-2.5 px-4 rounded-lg bg-sky-400 text-slate-950 font-bold text-xs tracking-wide shadow-[0_0_20px_rgba(125,211,252,0.45)] hover:bg-sky-300 hover:shadow-[0_0_28px_rgba(125,211,252,0.65)] transition-all active:scale-95 duration-150 disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <span>{isRegister ? 'Criar minha conta' : 'Acessar'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>{isRegister ? 'Criar minha conta' : 'Acessar Workspace'}</span>
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
+
         </form>
 
       </div>
 
-      <div className="relative z-10 mt-8 text-center text-[11px]"
-           style={{ color: 'var(--text-muted)' }}>
-        TaskFlow • Produtividade sem limites
+      <div className="relative z-10 mt-6 text-center text-xs text-slate-500 dark:text-on-surface-variant font-mono">
+        TaskFlow Pro • Glacier Glassmorphism
       </div>
 
     </div>

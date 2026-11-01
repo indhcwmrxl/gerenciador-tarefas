@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Plus, 
   Search, 
   LayoutGrid, 
   List, 
   RefreshCw, 
-  Filter,
-  CheckCircle2,
-  SlidersHorizontal
+  ArrowUpDown,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 
-import { 
-  apiTasks 
-} from './services/api';
-
+import { apiTasks } from './services/api';
 import { Navbar } from './components/Navbar';
 import { StatsCards } from './components/StatsCards';
 import { KanbanBoard } from './components/KanbanBoard';
@@ -55,8 +51,9 @@ export function App() {
   // View & Filter states
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'table'
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [prazoFilter, setPrazoFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState('prioridade'); // 'prioridade' | 'prazo' | 'padrao'
 
   // Modals
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -104,10 +101,29 @@ export function App() {
     }
   }, [user, loadData]);
 
+  // Global Keyboard Shortcuts (N para nova tarefa, Esc para fechar)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignora se estiver digitando em input ou textarea
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        handleOpenNewTask('pendente');
+      } else if (e.key === 'Escape') {
+        setIsTaskModalOpen(false);
+        setIsDetailModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem('taskflow_user', JSON.stringify(userData));
-    addToast(`Bem-vindo, ${userData.nome}`, 'success');
+    addToast(`Bem-vindo ao TaskFlow Pro, ${userData.nome}`, 'success');
   };
 
   const handleLogout = () => {
@@ -118,10 +134,12 @@ export function App() {
 
   const handleStatusChange = async (taskId, novoStatus) => {
     try {
+      // Atualização otimista imediata na UI
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: novoStatus } : t))
       );
       await apiTasks.update(taskId, { status: novoStatus });
+      addToast('Status atualizado.', 'info');
       loadData(true);
     } catch (err) {
       addToast(err.message || 'Erro ao atualizar status.', 'error');
@@ -132,19 +150,19 @@ export function App() {
   const handleSaveTask = async (taskData) => {
     if (taskData.id) {
       await apiTasks.update(taskData.id, taskData);
-      addToast('Tarefa atualizada.', 'success');
+      addToast('Demanda atualizada com sucesso.', 'success');
     } else {
       await apiTasks.create({
         ...taskData,
         responsavel_id: user.id,
       });
-      addToast('Tarefa criada.', 'success');
+      addToast('Nova demanda registrada.', 'success');
     }
     loadData(true);
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Excluir esta tarefa?')) return;
+    if (!window.confirm('Deseja excluir esta tarefa definitivamente?')) return;
     try {
       await apiTasks.delete(taskId);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -170,16 +188,44 @@ export function App() {
     setIsDetailModalOpen(true);
   };
 
-  // Filter tasks
+  // Filtragem e ordenação das tarefas
   const filteredTasks = tasks.filter((t) => {
     const matchSearch =
       t.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.descricao && t.descricao.toLowerCase().includes(searchQuery.toLowerCase()));
+      (t.descricao && t.descricao.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      `tsk-${t.id}`.includes(searchQuery.toLowerCase());
 
-    const matchStatus = !statusFilter || t.status === statusFilter;
     const matchPriority = !priorityFilter || t.prioridade === priorityFilter;
 
-    return matchSearch && matchStatus && matchPriority;
+    let matchPrazo = true;
+    if (prazoFilter === 'vencidos') {
+      matchPrazo = t.prazo && t.status !== 'concluida' && new Date(t.prazo) < new Date();
+    } else if (prazoFilter === 'hoje') {
+      if (!t.prazo) matchPrazo = false;
+      else {
+        const d = new Date(t.prazo);
+        const hoje = new Date();
+        matchPrazo = d.toDateString() === hoje.toDateString();
+      }
+    } else if (prazoFilter === 'com_prazo') {
+      matchPrazo = Boolean(t.prazo);
+    }
+
+    return matchSearch && matchPriority && matchPrazo;
+  });
+
+  // Ordenação
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortOrder === 'prioridade') {
+      const order = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+      return (order[a.prioridade] ?? 4) - (order[b.prioridade] ?? 4);
+    }
+    if (sortOrder === 'prazo') {
+      if (!a.prazo) return 1;
+      if (!b.prazo) return -1;
+      return new Date(a.prazo) - new Date(b.prazo);
+    }
+    return b.id - a.id;
   });
 
   if (!user) {
@@ -198,127 +244,105 @@ export function App() {
   const userTaskIds = tasks.map((t) => t.id);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans"
-         style={{ background: 'var(--bg-canvas)', color: 'var(--text-primary)' }}>
+    <div className="min-h-screen flex flex-col font-sans select-none overflow-x-hidden">
       
-      {/* BACKGROUND LAYERS */}
-      <div className="fixed inset-0 bg-grid-pattern opacity-60 pointer-events-none" style={{ zIndex: 0 }} />
-      <div className="fixed inset-0 pointer-events-none hero-glow" style={{ zIndex: 0 }} />
+      {/* TOPBAR */}
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        userTaskIds={userTaskIds}
+        onNewTask={handleOpenNewTask}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-      {/* NAVBAR */}
-      <div style={{ position: 'relative', zIndex: 10 }}>
-        <Navbar
-          user={user}
-          onLogout={handleLogout}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          userTaskIds={userTaskIds}
-          onNewTask={handleOpenNewTask}
-        />
-      </div>
-
-      {/* MAIN VIEW */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-5" style={{ position: 'relative', zIndex: 1 }}>
+      {/* MAIN EXECUTIVE WORKSPACE */}
+      <main className="flex-1 p-4 sm:p-6 max-w-[1720px] mx-auto w-full flex flex-col gap-6" data-purpose="executive-workspace">
         
-        {/* COMPACT STATS STRIP */}
+        {/* EXECUTIVE HUD METRICS (FROZEN LIGHT STRIP) */}
         <StatsCards tasks={tasks} />
 
-      {/* COMMAND TOOLBAR (SEARCH & FILTERS) */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        {/* BOARD CONTROLS (FILTER & SORT TOOLBAR) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 py-1" data-purpose="board-filter-toolbar">
           
-          {/* SEARCH */}
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute inset-y-0 left-0 pl-2.5 flex items-center w-3.5 h-3.5 pointer-events-none"
-                    style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filtrar tarefas..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg layer-input"
-            />
-          </div>
-
-          {/* CONTROLS */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* SEARCH & SELECT FILTERS */}
+          <div className="flex items-center gap-2.5 flex-wrap">
             
-            {/* STATUS FILTER */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg layer-input"
-            >
-              <option value="">Todos os status</option>
-              <option value="pendente">A Fazer</option>
-              <option value="em_andamento">Em Andamento</option>
-              <option value="concluida">Concluídas</option>
-            </select>
+            {/* Input Filter */}
+            <div className="relative w-64">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filtrar por nome, tag..."
+                className="w-full bg-slate-100/90 dark:bg-[#0e172a]/75 border border-slate-300 dark:border-sky-400/15 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-on-surface placeholder-slate-400 dark:placeholder-sky-200/40 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 backdrop-blur-md transition-all shadow-inner font-sans"
+              />
+            </div>
 
-            {/* PRIORITY FILTER */}
+            {/* Priority Dropdown */}
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg layer-input"
+              className="bg-slate-100/90 dark:bg-[#0e172a]/75 border border-slate-300 dark:border-sky-400/15 text-slate-700 dark:text-on-surface-variant text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-sky-400 cursor-pointer backdrop-blur-md transition-all"
             >
-              <option value="">Prioridades</option>
-              <option value="baixa">Baixa</option>
-              <option value="media">Média</option>
+              <option value="">Todas as prioridades</option>
+              <option value="urgente">Urgente 🔥</option>
               <option value="alta">Alta</option>
-              <option value="urgente">Urgente</option>
+              <option value="media">Média</option>
+              <option value="baixa">Baixa</option>
             </select>
 
-            {/* REFRESH BUTTON */}
+            {/* Prazo Dropdown */}
+            <select
+              value={prazoFilter}
+              onChange={(e) => setPrazoFilter(e.target.value)}
+              className="bg-slate-100/90 dark:bg-[#0e172a]/75 border border-slate-300 dark:border-sky-400/15 text-slate-700 dark:text-on-surface-variant text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-sky-400 cursor-pointer backdrop-blur-md transition-all"
+            >
+              <option value="">Todos os prazos</option>
+              <option value="hoje">Vence Hoje</option>
+              <option value="vencidos">Prazo Vencido ⚠️</option>
+              <option value="com_prazo">Com Prazo Definido</option>
+            </select>
+
+          </div>
+
+          {/* RIGHT TOOLS: SORT & REFRESH */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setSortOrder((prev) => 
+                  prev === 'prioridade' ? 'prazo' : prev === 'prazo' ? 'padrao' : 'prioridade'
+                );
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100/90 dark:bg-[#0e172a]/75 border border-slate-300 dark:border-sky-400/15 text-slate-700 dark:text-on-surface-variant text-xs hover:text-sky-500 hover:border-sky-400/40 transition-all font-mono"
+              title="Clique para alternar ordenação"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span>
+                {sortOrder === 'prioridade' ? 'Ordenado por prioridade' : sortOrder === 'prazo' ? 'Ordenado por prazo' : 'Ordem de criação'}
+              </span>
+            </button>
+
             <button
               onClick={() => loadData()}
               disabled={loading}
-              className="p-1.5 rounded-lg transition-all"
-              style={{
-                border: '1px solid var(--border-color)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-muted)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#9333ea'; e.currentTarget.style.borderColor = 'rgba(147,51,234,0.4)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
-              title="Recarregar"
+              className="p-1.5 rounded-lg bg-slate-100/90 dark:bg-[#0e172a]/75 border border-slate-300 dark:border-sky-400/15 text-slate-600 dark:text-on-surface-variant hover:text-sky-500 hover:border-sky-400/40 transition-colors"
+              title="Sincronizar tarefas"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
-
-            {/* VIEW MODE TOGGLE */}
-            <div className="flex items-center rounded-lg p-0.5"
-                 style={{ background: 'var(--bg-canvas)', border: '1px solid var(--border-color)' }}>
-              <button
-                onClick={() => setViewMode('kanban')}
-                className="p-1 rounded transition-all"
-                style={viewMode === 'kanban' ? {
-                  background: 'linear-gradient(135deg, rgba(232,244,0,0.12), rgba(147,51,234,0.18))',
-                  color: '#9333ea',
-                } : { color: 'var(--text-muted)' }}
-                title="Quadro"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className="p-1 rounded transition-all"
-                style={viewMode === 'table' ? {
-                  background: 'linear-gradient(135deg, rgba(232,244,0,0.12), rgba(147,51,234,0.18))',
-                  color: '#9333ea',
-                } : { color: 'var(--text-muted)' }}
-                title="Tabela"
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
           </div>
 
         </div>
 
-        {/* WORKSPACE CONTENT */}
+        {/* WORKSPACE VIEW: KANBAN COM DRAG & DROP OU TABELA */}
         {viewMode === 'kanban' ? (
           <KanbanBoard
-            tasks={filteredTasks}
+            tasks={sortedTasks}
             onStatusChange={handleStatusChange}
             onViewDetails={handleOpenDetails}
             onEdit={handleOpenEditTask}
@@ -327,7 +351,7 @@ export function App() {
           />
         ) : (
           <TasksTable
-            tasks={filteredTasks}
+            tasks={sortedTasks}
             onStatusChange={handleStatusChange}
             onViewDetails={handleOpenDetails}
             onEdit={handleOpenEditTask}
@@ -337,15 +361,29 @@ export function App() {
 
       </main>
 
-      {/* FOOTER */}
-      <footer className="py-4 text-center text-[11px] mt-auto" style={{
-        borderTop: '1px solid var(--divider)',
-        color: 'var(--text-muted)',
-        position: 'relative', zIndex: 1,
-      }}>
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <span>TaskFlow • Gestão de Tarefas</span>
-          <span>Workspace Individual</span>
+      {/* FOOTER STATUS BAR (FROZEN SYSTEM STRIP) */}
+      <footer className="h-9 border-t border-sky-400/15 bg-white/70 dark:bg-[#080d1a]/85 backdrop-blur-md px-6 flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-on-surface-variant select-none">
+        <div className="flex items-center gap-3">
+          <span className="font-semibold text-slate-800 dark:text-slate-300">TaskFlow Pro</span>
+          <span className="h-3 w-px bg-slate-300 dark:bg-sky-400/20"></span>
+          <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+            Latência: 24ms
+          </span>
+          <span className="hidden sm:inline">• Sincronizado</span>
+        </div>
+
+        {/* KEYBOARD SHORTCUTS HINTS */}
+        <div className="hidden md:flex items-center gap-4 text-[10px]">
+          <span className="flex items-center gap-1">
+            <kbd className="px-1 rounded bg-slate-200 dark:bg-sky-500/10 border border-slate-300 dark:border-sky-400/20">N</kbd> Nova Tarefa
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1 rounded bg-slate-200 dark:bg-sky-500/10 border border-slate-300 dark:border-sky-400/20">⌘K</kbd> Comando
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1 rounded bg-slate-200 dark:bg-sky-500/10 border border-slate-300 dark:border-sky-400/20">Esc</kbd> Fechar
+          </span>
         </div>
       </footer>
 
@@ -365,7 +403,7 @@ export function App() {
         taskId={selectedTaskId}
       />
 
-      {/* TOAST SYSTEM */}
+      {/* TOAST NOTIFICATIONS */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
     </div>
