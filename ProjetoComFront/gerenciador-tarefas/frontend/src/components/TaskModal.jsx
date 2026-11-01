@@ -6,6 +6,7 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
   const [descricao, setDescricao] = useState('');
   const [status,    setStatus]    = useState('pendente');
   const [prioridade, setPrioridade] = useState('media');
+  const [prazo,     setPrazo]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [erro,      setErro]      = useState('');
 
@@ -15,11 +16,13 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
       setDescricao(taskToEdit.descricao || '');
       setStatus(taskToEdit.status || 'pendente');
       setPrioridade(taskToEdit.prioridade || 'media');
+      setPrazo(taskToEdit.prazo ? taskToEdit.prazo.slice(0, 10) : '');
     } else {
       setTitulo('');
       setDescricao('');
       setStatus(initialStatus || 'pendente');
       setPrioridade('media');
+      setPrazo('');
     }
     setErro('');
   }, [taskToEdit, initialStatus, isOpen]);
@@ -38,6 +41,7 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
         descricao: descricao.trim() || null,
         status,
         prioridade,
+        prazo: prazo || null,
         responsavel_id: currentUser?.id,
       });
       onClose();
@@ -145,6 +149,18 @@ export function TaskModal({ isOpen, onClose, onSave, taskToEdit, initialStatus, 
                 <option value="urgente">Urgente</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-black mb-1 tracking-wide uppercase"
+                   style={{ color: 'var(--text-muted)' }}>Prazo (opcional)</label>
+            <input
+              type="date"
+              value={prazo}
+              onChange={(e) => setPrazo(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg layer-input"
+              min={new Date().toISOString().slice(0, 10)}
+            />
           </div>
 
           {/* ACTIONS */}

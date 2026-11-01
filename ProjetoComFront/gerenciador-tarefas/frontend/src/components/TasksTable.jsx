@@ -1,5 +1,11 @@
 import React from 'react';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import confetti from 'canvas-confetti';
+
+function isPrazoVencido(prazo, status) {
+  if (!prazo || status === 'concluida') return false;
+  return new Date(prazo) < new Date();
+}
 
 export function TasksTable({ 
   tasks, 
@@ -8,6 +14,18 @@ export function TasksTable({
   onEdit, 
   onDelete 
 }) {
+  const handleStatusChange = (taskId, novoStatus) => {
+    if (novoStatus === 'concluida') {
+      confetti({
+        particleCount: 70,
+        spread: 65,
+        origin: { y: 0.6 },
+        colors: ['#e8f400', '#9333ea', '#ff2d78', '#39ff14'],
+        scalar: 1.1,
+      });
+    }
+    onStatusChange(taskId, novoStatus);
+  };
   const statusStyles = {
     pendente: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-900',
     em_andamento: 'text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border-brand-200 dark:border-brand-900',
@@ -39,7 +57,7 @@ export function TasksTable({
               <th className="py-2.5 px-3">Título & Detalhes</th>
               <th className="py-2.5 px-3 w-28">Prioridade</th>
               <th className="py-2.5 px-3 w-36">Status</th>
-              <th className="py-2.5 px-3 w-28">Atualização</th>
+              <th className="py-2.5 px-3 w-28">Prazo</th>
               <th className="py-2.5 px-3 text-right w-24">Ações</th>
             </tr>
           </thead>
@@ -68,7 +86,7 @@ export function TasksTable({
                 <td className="py-2.5 px-3">
                   <select
                     value={task.status}
-                    onChange={(e) => onStatusChange(task.id, e.target.value)}
+                    onChange={(e) => handleStatusChange(task.id, e.target.value)}
                     className={`text-[11px] font-semibold rounded px-2 py-0.5 border cursor-pointer focus:outline-none ${statusStyles[task.status]}`}
                   >
                     <option value="pendente">A Fazer</option>
@@ -76,11 +94,21 @@ export function TasksTable({
                     <option value="concluida">Concluída</option>
                   </select>
                 </td>
-                <td className="py-2.5 px-3 text-slate-400 text-[11px]">
-                  {new Date(task.atualizada_em || task.criada_em).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                  })}
+                <td className="py-2.5 px-3 text-[11px]">
+                  {task.prazo ? (
+                    <span className={`flex items-center gap-1 font-medium ${
+                      isPrazoVencido(task.prazo, task.status)
+                        ? 'text-rose-500'
+                        : 'text-slate-400'
+                    }`}>
+                      {isPrazoVencido(task.prazo, task.status) && (
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                      )}
+                      {new Date(task.prazo).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                    </span>
+                  ) : (
+                    <span className="text-slate-300 dark:text-slate-600">—</span>
+                  )}
                 </td>
                 <td className="py-2.5 px-3 text-right">
                   <div className="flex items-center justify-end gap-1">

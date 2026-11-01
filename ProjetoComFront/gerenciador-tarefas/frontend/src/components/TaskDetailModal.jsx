@@ -143,8 +143,18 @@ export function TaskDetailModal({ isOpen, onClose, taskId }) {
             </div>
 
             {/* METADATA */}
-            <div className="pt-3 border-t border-border-light dark:border-border-dark/60 flex items-center justify-between text-[11px] text-slate-400">
+            <div className="pt-3 border-t border-border-light dark:border-border-dark/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
               <span>Criado em {new Date(taskCompleta.criada_em).toLocaleDateString('pt-BR')}</span>
+              {taskCompleta.prazo && (
+                <span className={`font-medium ${
+                  taskCompleta.status !== 'concluida' && new Date(taskCompleta.prazo) < new Date()
+                    ? 'text-rose-500 font-bold'
+                    : 'text-brand-600 dark:text-brand-400'
+                }`}>
+                  Prazo: {new Date(taskCompleta.prazo).toLocaleDateString('pt-BR')}
+                  {taskCompleta.status !== 'concluida' && new Date(taskCompleta.prazo) < new Date() && ' (Vencido)'}
+                </span>
+              )}
               <span>Atualizado em {new Date(taskCompleta.atualizada_em).toLocaleDateString('pt-BR')}</span>
             </div>
 

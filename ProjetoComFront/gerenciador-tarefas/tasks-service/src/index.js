@@ -59,7 +59,7 @@ app.get('/', (req, res) =>
 // ---------- CREATE ----------
 app.post('/tasks', async (req, res) => {
   try {
-    const { titulo, descricao, status = 'pendente', responsavel, responsavel_id, prioridade = 'media' } = req.body;
+    const { titulo, descricao, status = 'pendente', responsavel, responsavel_id, prioridade = 'media', prazo } = req.body;
     if (!titulo) return res.status(400).json({ erro: 'O campo "titulo" é obrigatório.' });
     if (!STATUS_VALIDOS.includes(status))
       return res.status(400).json({ erro: `Status inválido. Use: ${STATUS_VALIDOS.join(', ')}` });
@@ -74,9 +74,9 @@ app.post('/tasks', async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO tasks (titulo, descricao, status, responsavel, responsavel_id, prioridade)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [titulo, descricao || null, status, respNome, respId, prioridade || 'media']
+      `INSERT INTO tasks (titulo, descricao, status, responsavel, responsavel_id, prioridade, prazo)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [titulo, descricao || null, status, respNome, respId, prioridade || 'media', prazo || null]
     );
     const tarefa = rows[0];
 
@@ -168,7 +168,7 @@ app.put('/tasks/:id', async (req, res) => {
     const id = lerId(req.params.id);
     if (!id) return res.status(400).json({ erro: 'O id deve ser um número inteiro positivo.' });
 
-    const { titulo, descricao, status, responsavel, responsavel_id, prioridade } = req.body;
+    const { titulo, descricao, status, responsavel, responsavel_id, prioridade, prazo } = req.body;
     if (status && !STATUS_VALIDOS.includes(status))
       return res.status(400).json({ erro: `Status inválido. Use: ${STATUS_VALIDOS.join(', ')}` });
 
@@ -195,9 +195,10 @@ app.put('/tasks/:id', async (req, res) => {
          responsavel    = COALESCE($4, responsavel),
          responsavel_id = COALESCE($5, responsavel_id),
          prioridade     = COALESCE($6, prioridade),
+         prazo          = CASE WHEN $8::boolean THEN $7::date ELSE prazo END,
          atualizada_em  = NOW()
-       WHERE id=$7 RETURNING *`,
-      [titulo, descricao, status, novoNome, novoRespId, prioridade, id]
+       WHERE id=$9 RETURNING *`,
+      [titulo, descricao, status, novoNome, novoRespId, prioridade, prazo || null, prazo !== undefined, id]
     );
     const tarefa = rows[0];
 

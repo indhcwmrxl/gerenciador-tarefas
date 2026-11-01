@@ -287,3 +287,28 @@ select.layer-input option {
 [class*="animate-"] {
   transition-duration: 0s !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   DATE INPUT STYLING
+═══════════════════════════════════════════════════════ */
+input[type="date"].layer-input::-webkit-calendar-picker-indicator {
+  filter: opacity(0.4);
+  cursor: pointer;
+}
+
+.dark input[type="date"].layer-input::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.4);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CARD ENTRY ANIMATION
+═══════════════════════════════════════════════════════ */
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

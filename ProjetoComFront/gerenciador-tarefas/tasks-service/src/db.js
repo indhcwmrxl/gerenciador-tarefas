@@ -31,6 +31,7 @@ async function init() {
   // Bancos criados no Módulo 1 ainda não têm a coluna responsavel_id
   await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS responsavel_id INTEGER');
   await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS prioridade VARCHAR(20) DEFAULT \'media\'');
+  await pool.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS prazo DATE');
 }
 
 module.exports = { pool, init };

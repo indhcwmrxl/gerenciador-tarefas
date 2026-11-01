@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ArrowLeft, Pencil, Trash2, Check, Calendar } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Pencil, Trash2, Check, Calendar, AlertTriangle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export function TaskCard({ task, onStatusChange, onViewDetails, onEdit, onDelete }) {
@@ -30,6 +30,9 @@ export function TaskCard({ task, onStatusChange, onViewDetails, onEdit, onDelete
     return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
+  const prazoVencido = task.prazo && task.status !== 'concluida' && new Date(task.prazo) < new Date();
+  const prazoLabel = task.prazo ? formatDate(task.prazo) : null;
+
   return (
     <div className="group layer-card layer-card-interactive rounded-xl p-3.5 space-y-2.5 relative overflow-hidden">
 
@@ -47,9 +50,19 @@ export function TaskCard({ task, onStatusChange, onViewDetails, onEdit, onDelete
             {prio.label}
           </span>
         </div>
-        <span className="text-[10px] flex items-center gap-1 font-medium" style={{ color: 'var(--text-muted)' }}>
-          <Calendar className="w-3 h-3" />
-          {formatDate(task.atualizada_em || task.criada_em)}
+        <span className="text-[10px] flex items-center gap-1 font-medium" style={{ color: prazoVencido ? '#ef4444' : 'var(--text-muted)' }}>
+          {prazoLabel ? (
+            <>
+              {prazoVencido && <AlertTriangle className="w-3 h-3" />}
+              <Calendar className="w-3 h-3" />
+              {prazoLabel}
+            </>
+          ) : (
+            <>
+              <Calendar className="w-3 h-3" />
+              {formatDate(task.atualizada_em || task.criada_em)}
+            </>
+          )}
         </span>
       </div>
 
