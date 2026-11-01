@@ -12,6 +12,13 @@ const useSSL = process.env.PGSSL !== 'false';
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: useSSL ? { rejectUnauthorized: false } : false,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+
+pool.on('error', (err) => {
+  console.warn('Aviso: conexão ociosa com Neon reiniciada:', err.message);
 });
 
 async function init() {

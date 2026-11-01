@@ -58,9 +58,10 @@ console.log(`  ${colors.cyan}● users-service:${colors.reset}        http://loc
 console.log(`  ${colors.yellow}● notifications-service:${colors.reset}http://localhost:3002`);
 console.log(`\n${colors.dim}Pressione CTRL+C a qualquer momento para parar todos os serviços.${colors.reset}\n`);
 
+let isShuttingDown = false;
 const children = [];
 
-services.forEach((s) => {
+function startService(s) {
   const cwd = path.join(__dirname, s.dir);
   const proc = spawn(s.cmd, s.args, {
     cwd,
@@ -81,7 +82,6 @@ services.forEach((s) => {
   proc.stderr.on('data', (chunk) => {
     const lines = chunk.toString().trim().split('\n');
     lines.forEach((line) => {
-      // Filtrar avisos de depreciação do pg-connection-string para manter saída limpa
       if (line.includes('SECURITY WARNING: The SSL modes')) return;
       if (line.includes('In the next major version')) return;
       if (line.includes('To prepare for this change:')) return;
@@ -92,15 +92,20 @@ services.forEach((s) => {
   });
 
   proc.on('close', (code) => {
+    if (isShuttingDown) return;
     if (code !== 0 && code !== null) {
-      console.log(`${colors.red}[${s.name}] Encerrado com código ${code}${colors.reset}`);
+      console.log(`${colors.red}[${s.name}] Encerrado com código ${code}. Reiniciando em 2 segundos...${colors.reset}`);
+      setTimeout(() => startService(s), 2000);
     }
   });
 
   children.push(proc);
-});
+}
+
+services.forEach((s) => startService(s));
 
 function cleanup() {
+  isShuttingDown = true;
   console.log(`\n${colors.yellow}Encerrando todos os serviços...${colors.reset}`);
   children.forEach((c) => {
     try {
