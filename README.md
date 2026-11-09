@@ -1,5 +1,9 @@
 # Gerenciador de Tarefas: Módulo 2 (Microsserviços)
 
+## Vídeo de apresentação
+
+[Acesse o vídeo do projeto no YouTube](https://youtu.be/jmaGEsAO1x0?is=8IQ10VEERx3w00vk).
+
 Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).
 
 Domínio: **gerenciador de tarefas** (evento natural: "tarefa concluída", usado no Módulo 4).
@@ -34,10 +38,6 @@ Essa separação permite que cada serviço mantenha seu próprio banco de dados,
 | notifications-service | https://notifications-service-production-c3c4.up.railway.app |
 
 Verificação rápida no navegador: abra [/health/dependencias](https://tasks-service-production-dd13.up.railway.app/health/dependencias). Deve mostrar `{"tasks":"ok","users":"ok","notifications":[...]}`.
-
-## Vídeo de apresentação
-
-[Acesse o vídeo do projeto no YouTube](https://youtu.be/jmaGEsAO1x0?is=8IQ10VEERx3w00vk).
 
 ## Arquitetura
 
