@@ -4,8 +4,7 @@ Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).
 
 Domínio: **gerenciador de tarefas** (evento natural: "tarefa concluída", usado no Módulo 4).
 
-Neste módulo, a API única do Módulo 1 foi dividida em **3 microsserviços independentes**, cada um com seu código e seu banco de dados, que se comunicam por **HTTP/REST**. O Módulo 1 continua preservado na tag `entrega-1-cloud`.
-
+Neste módulo, a API única do Módulo 1 foi dividida em **3 microsserviços independentes**, cada um com seu código e seu banco de dados, que se comunicam por **HTTP/REST**. O Módulo 1 continua [...]
 
 ## Tecnologias e serviços utilizados
 
@@ -34,7 +33,11 @@ Essa separação permite que cada serviço mantenha seu próprio banco de dados,
 | users-service | https://users-service-production-9f90.up.railway.app |
 | notifications-service | https://notifications-service-production-c3c4.up.railway.app |
 
-Verificação rápida no navegador: abra [/health/dependencias](https://tasks-service-production-dd13.up.railway.app/health/dependencias). Deve mostrar `{"tasks":"ok","users":"ok","notifications":"ok"}`.
+Verificação rápida no navegador: abra [/health/dependencias](https://tasks-service-production-dd13.up.railway.app/health/dependencias). Deve mostrar `{"tasks":"ok","users":"ok","notifications":[...]}`.
+
+## Vídeo de apresentação
+
+[Acesse o vídeo do projeto no YouTube](https://youtu.be/jmaGEsAO1x0?is=8IQ10VEERx3w00vk).
 
 ## Arquitetura
 
@@ -49,7 +52,6 @@ Verificação rápida no navegador: abra [/health/dependencias](https://tasks-se
 Chamadas entre serviços:
 - tasks-service chama users-service: `GET /users/:id` (síncrono; confirma que o responsável existe).
 - tasks-service chama notifications-service: `POST /notifications` (não bloqueia a resposta).
-
 
 ## Como testar a comunicação na nuvem
 
