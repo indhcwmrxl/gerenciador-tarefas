@@ -1,5 +1,14 @@
 # Changelog
 
+## [entrega-3-containers]
+- Conteinerização individual de todos os microsserviços via Dockerfile (Node.js 20 Alpine, multi-stage build, execução sem root com usuário `node`)
+- Orquestração completa do ambiente local via `docker-compose.yml` (3 microsserviços + 3 instâncias de banco PostgreSQL independentes)
+- Configuração de volumes persistentes nomeados (`gerenciador_users_db_data`, `gerenciador_tasks_db_data`, `gerenciador_notifications_db_data`) garantindo durabilidade dos dados
+- Healthchecks configurados nos bancos (`pg_isready`) e nas aplicações (`wget /health`), com inicialização ordenada e determinística via `depends_on: condition: service_healthy`
+- Encerramento gracioso (*graceful shutdown*) configurado para captura de sinais SIGTERM/SIGINT
+- Scripts de validação e automação de testes adicionados: `scripts/test-endpoints.sh` e `scripts/test-persistence.sh`
+- Seção comparativa completa no README: Deploy Direto na Plataforma Cloud (Módulos 1 e 2) vs. Execução via Containers (Módulo 3)
+
 ## [entrega-2-microsservicos]
 - Repositório reorganizado em monorepo: tasks-service, users-service, notifications-service
 - Novo users-service (CRUD de usuários) com banco próprio

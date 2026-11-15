@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # Bancos de Dados PostgreSQL (Independentes)
+  # ==========================================
+  users-db:
+    image: postgres:16-alpine
+    container_name: users-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users_db
+    ports:
+      - "5431:5432"
+    volumes:
+      - users_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d users_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+  tasks-db:
+    image: postgres:16-alpine
+    container_name: tasks-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tasks_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - tasks_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tasks_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+  notifications-db:
+    image: postgres:16-alpine
+    container_name: notifications-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: notifications_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - notifications_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notifications_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+  # ==========================================
+  # Microsserviços da Aplicação
+  # ==========================================
+  users-service:
+    build:
+      context: ./users-service
+      dockerfile: Dockerfile
+    container_name: users-service
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:postgres@users-db:5432/users_db
+      PGSSL: "false"
+    ports:
+      - "3001:3001"
+    depends_on:
+      users-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+  notifications-service:
+    build:
+      context: ./notifications-service
+      dockerfile: Dockerfile
+    container_name: notifications-service
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://postgres:postgres@notifications-db:5432/notifications_db
+      PGSSL: "false"
+    ports:
+      - "3002:3002"
+    depends_on:
+      notifications-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+  tasks-service:
+    build:
+      context: ./tasks-service
+      dockerfile: Dockerfile
+    container_name: tasks-service
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@tasks-db:5432/tasks_db
+      PGSSL: "false"
+      USERS_SERVICE_URL: http://users-service:3001
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:3002
+      REQUEST_TIMEOUT_MS: 5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      tasks-db:
+        condition: service_healthy
+      users-service:
+        condition: service_healthy
+      notifications-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+# ==========================================
+# Volumes Persistentes e Redes
+# ==========================================
+volumes:
+  users_db_data:
+    name: gerenciador_users_db_data
+  tasks_db_data:
+    name: gerenciador_tasks_db_data
+  notifications_db_data:
+    name: gerenciador_notifications_db_data
+
+networks:
+  gerenciador-rede:
+    name: gerenciador-network
+    driver: bridge

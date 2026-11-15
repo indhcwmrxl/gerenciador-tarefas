@@ -216,7 +216,17 @@ app.delete('/tasks/:id', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 init()
-  .then(() => app.listen(PORT, () => console.log(`tasks-service rodando na porta ${PORT}`)))
+  .then(() => {
+    const server = app.listen(PORT, () => console.log(`tasks-service rodando na porta ${PORT}`));
+    const shutdown = () => {
+      server.close(() => {
+        pool.end();
+        process.exit(0);
+      });
+    };
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+  })
   .catch((e) => {
     console.error('Falha ao conectar/inicializar o banco:', e.message);
     process.exit(1);
