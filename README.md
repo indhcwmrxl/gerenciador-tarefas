@@ -1,76 +1,68 @@
-# Gerenciador de Tarefas: Módulo 3 (Containers)
+# Gerenciador de Tarefas
 
 Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).  
-**Docente(s):** Glaucia Melissa (Responsável) / Luiziane Paulino dos Santos (Estágio Docência)  
+**Docente(s):** Glaucia Melissa (Responsável pela disciplina) / Luiziane Paulino dos Santos (Estágio Docência)  
 **Domínio:** Gerenciador de tarefas (evento natural: *"tarefa concluída"*, base para o Módulo 4).
 
-Histórico de entregas preservado nas tags:
-- `entrega-1-cloud`: Módulo 1 — API monolítica inicial publicada em nuvem com banco PostgreSQL (Neon/Railway).
-- `entrega-2-microsservicos`: Módulo 2 — Decomposição em 3 microsserviços com comunicação síncrona HTTP/REST.
+Histórico de entregas e módulos preservados nas tags do Git:
+- `entrega-1-cloud`: Módulo 1 — API monolítica inicial publicada em nuvem com banco gerenciado (Neon/Railway).
+- `entrega-2-microsservicos`: Módulo 2 — Decomposição em 3 microsserviços independentes com comunicação síncrona HTTP/REST.
 - `entrega-3-containers`: Módulo 3 — Conteinerização individual via Dockerfile e orquestração completa via Docker Compose com bancos locais e volumes persistentes.
 
 ---
 
-## Vídeo de Demonstração (Módulo 3)
+## Módulo 3 — Containers e Docker Compose (Novidade)
+
+Neste módulo, todos os componentes do sistema foram empacotados em containers padronizados e orquestrados localmente de forma autônoma:
+
+### Vídeo de Demonstração (Módulo 3)
 
 > [!IMPORTANT]
 > **Link do Vídeo no YouTube (Não Listado):** `[INSERIR_LINK_AQUI]`  
 > *(Demonstração dos 6 containers subindo via Docker Compose, execução do teste de comunicação e validação da persistência dos dados após `docker-compose down` / `docker-compose up`)*.
 
----
-
-## O que foi implementado no Módulo 3
-
-Neste módulo, todos os componentes do sistema foram empacotados em containers padronizados e orquestrados localmente de forma autônoma:
-
+### O que foi implementado:
 1. **Dockerfile individual para cada microsserviço:**
-   - Construção com **multi-stage build** baseada na imagem enxuta `node:20-alpine` (reduzindo a imagem final para ~49 MB compactada).
-   - Separação entre estágio de dependências (`dependencies`) e estágio de execução (`runner`).
-   - Execução com usuário sem privilégios (`USER node`) para segurança dos containers.
+   - Construção com **multi-stage build** baseada na imagem enxuta `node:20-alpine` (~49 MB compactada).
+   - Separação entre estágio de instalação de dependências (`dependencies`) e estágio de execução (`runner`).
+   - Execução com usuário sem privilégios (`USER node`) para segurança de containers.
    - Instrução `HEALTHCHECK` nativa validando `/health` via `wget`.
-   - Tratamento de encerramento gracioso (*graceful shutdown*) para sinais `SIGTERM` e `SIGINT`.
-   - Arquivo `.dockerignore` configurado para evitar envio de `node_modules` e arquivos locais.
+   - Tratamento de encerramento gracioso (*graceful shutdown*) capturando `SIGTERM` e `SIGINT`.
+   - Arquivo `.dockerignore` configurado em cada pasta.
 
 2. **Orquestração Completa via `docker-compose.yml`:**
    - 3 microsserviços Node.js/Express (`tasks-service`, `users-service`, `notifications-service`).
    - 3 instâncias de banco PostgreSQL 16 Alpine independentes (`users-db`, `tasks-db`, `notifications-db`), preservando o isolamento de dados de microsserviços.
    - **Volumes persistentes nomeados:** `gerenciador_users_db_data`, `gerenciador_tasks_db_data` e `gerenciador_notifications_db_data`.
-   - **Inicialização determinística:** healthchecks nos bancos (`pg_isready`) combinados com `depends_on: { condition: service_healthy }`, garantindo que os serviços só subam após o banco estar pronto.
+   - **Inicialização determinística:** healthchecks nos bancos (`pg_isready`) combinados com `depends_on: { condition: service_healthy }`.
    - Rede interna dedicada do Docker (`gerenciador-network`).
 
-3. **Automação e Teste de Persistência:**
-   - Script automatizado `scripts/test-persistence.sh` validando a integridade dos dados antes e depois de um ciclo `docker-compose down` -> `docker-compose up -d`.
-   - Script funcional `scripts/test-endpoints.sh` testando o ciclo completo das APIs.
+3. **Arquitetura de Containers (Topologia Local):**
+   ```
+                          [ Host / Navegador / curl ]
+                                       |
+             +-------------------------+-------------------------+
+             | :3000                   | :3001                   | :3002
+             v                         v                         v
+     +-----------------+       +-----------------+       +-----------------------+
+     |  tasks-service  | ----> |  users-service  |       | notifications-service |
+     | (Node.js Alpine)|  HTTP | (Node.js Alpine)|       |   (Node.js Alpine)    |
+     +-----------------+  REST +-----------------+       +-----------------------+
+             |                         |                             |
+             | HTTP (async fire&forget)|                             |
+             +-------------------------|-----------------------------+
+             |                         |                             |
+             v                         v                             v
+     +-----------------+       +-----------------+       +-----------------------+
+     |    tasks-db     |       |    users-db     |       |   notifications-db    |
+     | (Postgres 16)   |       | (Postgres 16)   |       |     (Postgres 16)     |
+     +-----------------+       +-----------------+       +-----------------------+
+             |                         |                             |
+             v                         v                             v
+     [(vol) tasks_data]        [(vol) users_data]        [(vol) notifications_data]
+   ```
 
----
-
-## Arquitetura de Containers (Docker Compose)
-
-```
-                       [ Host / Navegador / curl ]
-                                    |
-          +-------------------------+-------------------------+
-          | :3000                   | :3001                   | :3002
-          v                         v                         v
-  +-----------------+       +-----------------+       +-----------------------+
-  |  tasks-service  | ----> |  users-service  |       | notifications-service |
-  | (Node.js Alpine)|  HTTP | (Node.js Alpine)|       |   (Node.js Alpine)    |
-  +-----------------+  REST +-----------------+       +-----------------------+
-          |                         |                             |
-          | HTTP (async fire&forget)|                             |
-          +-------------------------|-----------------------------+
-          |                         |                             |
-          v                         v                             v
-  +-----------------+       +-----------------+       +-----------------------+
-  |    tasks-db     |       |    users-db     |       |   notifications-db    |
-  | (Postgres 16)   |       | (Postgres 16)   |       |     (Postgres 16)     |
-  +-----------------+       +-----------------+       +-----------------------+
-          |                         |                             |
-          v                         v                             v
-  [(vol) tasks_data]        [(vol) users_data]        [(vol) notifications_data]
-```
-
-### Mapeamento de Serviços e Portas
+### Mapeamento de Serviços, Portas e Volumes
 
 | Container | Imagem Base | Porta Interna | Porta no Host | Volume Persistente |
 |---|---|---|---|---|
@@ -83,146 +75,44 @@ Neste módulo, todos os componentes do sistema foram empacotados em containers p
 
 ---
 
-## Como Executar Localmente com Docker
+### Como Rodar via Docker Compose (Linux, macOS ou Windows 11)
 
-### Pré-requisitos
-- Docker instalado (v20+ ou Docker Desktop)
-- Docker Compose v2+ (`docker compose` ou `docker-compose`)
-
-### 1. Clonar o repositório
+#### 1. Iniciar todos os serviços e bancos:
 ```bash
-git clone https://github.com/indhcwmrxl/gerenciador-tarefas.git
-cd gerenciador-tarefas
-git checkout entrega-3-containers
+docker compose up --build -d
 ```
+*(ou `docker-compose up --build -d`)*
 
-### 2. Construir e iniciar todos os serviços
+#### 2. Verificar a saúde dos containers:
 ```bash
-docker-compose up --build -d
+docker compose ps
 ```
-*Em poucos segundos, os 3 bancos e os 3 microsserviços estarão rodando e saudáveis.*
+Todos os 6 containers devem exibir `Up (healthy)`.
 
-### 3. Verificar o status dos containers
+#### 3. Testar a comunicação entre os microsserviços:
+- No Linux/macOS:
+  ```bash
+  ./scripts/test-endpoints.sh
+  ```
+- No Windows (PowerShell):
+  ```powershell
+  .\scripts\test-endpoints.ps1
+  ```
+
+#### 4. Executar o Teste de Persistência Documentado:
+O teste comprova que os dados permanecem salvos nos volumes após destruir os containers com `docker compose down`:
+- No Linux/macOS:
+  ```bash
+  ./scripts/test-persistence.sh
+  ```
+- No Windows (PowerShell):
+  ```powershell
+  .\scripts\test-persistence.ps1
+  ```
+
+#### 5. Parar os containers mantendo os volumes de dados:
 ```bash
-docker-compose ps
-```
-Você verá todos os 6 containers com status `Up (healthy)`.
-
-### 4. Visualizar os logs em tempo real
-```bash
-docker-compose logs -f
-# Ou de um serviço específico:
-docker-compose logs -f tasks-service
-```
-
-### 5. Parar os containers (mantendo os dados persistidos)
-```bash
-docker-compose down
-```
-> [!NOTE]
-> O comando `docker-compose down` remove apenas os containers e redes. Os dados continuam salvos nos volumes Docker.  
-> *(Caso queira apagar também os dados, execute com `-v`: `docker-compose down -v`)*.
-
----
-
-## Como Testar os Endpoints
-
-Com os containers em execução, você pode executar o script automatizado:
-```bash
-./scripts/test-endpoints.sh
-```
-
-Ou executar manualmente via `curl`:
-```bash
-T=http://localhost:3000
-U=http://localhost:3001
-N=http://localhost:3002
-
-# 1. Checar saúde e comunicação entre microsserviços
-curl -s $T/health/dependencias; echo
-
-# 2. Criar usuário no users-service
-USERID=$(curl -s -X POST $U/users -H "Content-Type: application/json" -d "{\"nome\":\"Maria Silva\",\"email\":\"maria$RANDOM@exemplo.com\"}" | grep -o '"id":[0-9]*' | cut -d: -f2)
-echo "ID do usuário: $USERID"
-
-# 3. Criar tarefa associada ao usuário no tasks-service
-TID=$(curl -s -X POST $T/tasks -H "Content-Type: application/json" -d "{\"titulo\":\"Implementar Containers\",\"responsavel_id\":$USERID}" | grep -o '"id":[0-9]*' | cut -d: -f2)
-echo "ID da tarefa: $TID"
-
-# 4. Consultar tarefa
-curl -s $T/tasks/$TID; echo
-
-# 5. Consultar notificação de atribuição gerada automaticamente
-curl -s "$N/notifications?task_id=$TID"; echo
-
-# 6. Concluir a tarefa (dispara notificação de conclusão)
-curl -s -X PUT $T/tasks/$TID -H "Content-Type: application/json" -d '{"status":"concluida"}'; echo
-
-# 7. Conferir ambas notificações
-curl -s "$N/notifications?task_id=$TID"; echo
-
-# 8. Consultar tarefa completa (com dados aninhados do responsável)
-curl -s $T/tasks/$TID/completo; echo
-```
-
----
-
-## Teste de Persistência Documentado (`down` / `up`)
-
-Um dos requisitos centrais do Módulo 3 é comprovar que os dados inseridos nas APIs permanecem íntegros mesmo após desligar e remover os containers via `docker-compose down`.
-
-### Execução Automatizada
-Basta rodar o script incluído no projeto:
-```bash
-./scripts/test-persistence.sh
-```
-
-### Evidência de Execução Real
-
-```text
-==================================================================
-     TESTE DE PERSISTÊNCIA DOS CONTAINERS (DOCKER COMPOSE)        
-==================================================================
-
-[1/5] Subindo containers e verificando saúde dos serviços...
-Aguardando serviços ficarem prontos (healthcheck)...
-✓ Todos os serviços e bancos estão online e saudáveis!
-
-[2/5] Inserindo dados de teste via API REST...
-  -> Usuário criado (ID: 2, Nome: Discente SD 1794760134)
-  -> Tarefa criada (ID: 2, Título: Validar Persistencia de Volumes 1794760134)
-  -> Notificações registradas antes do down: 2 avisos
-
-[3/5] Executando docker-compose down (destruindo containers, preservando volumes)...
-[+] Running 7/7
- ✔ Container tasks-service          Removed
- ✔ Container notifications-service  Removed
- ✔ Container users-service          Removed
- ✔ Container tasks-db               Removed
- ✔ Container notifications-db       Removed
- ✔ Container users-db               Removed
- ✔ Network gerenciador-network      Removed
-
-[4/5] Executando docker-compose up -d (recriando containers a partir dos volumes)...
-[+] Running 7/7
- ✔ Network gerenciador-network      Created
- ✔ Container notifications-db       Healthy
- ✔ Container users-db               Healthy
- ✔ Container tasks-db               Healthy
- ✔ Container users-service          Healthy
- ✔ Container notifications-service  Healthy
- ✔ Container tasks-service          Started
-
-[5/5] Consultando APIs para validar persistência dos dados salvos...
-
-==================================================================
-             SUCESSO: TESTE DE PERSISTÊNCIA VALIDADO!            
-==================================================================
-Usuário recuperado com sucesso:   ID 2 - Discente SD 1794760134
-Tarefa recuperada com sucesso:    ID 2 - Validar Persistencia de Volumes 1794760134 (Status: concluida)
-Responsável aninhado (join API):  Discente SD 1794760134
-Notificações persistidas no banco: 2 avisos
-Os volumes gerenciador_*_db_data mantiveram o estado integralmente!
+docker compose down
 ```
 
 ---
@@ -232,35 +122,143 @@ Os volumes gerenciador_*_db_data mantiveram o estado integralmente!
 | Critério de Análise | Deploy Direto na Nuvem (Módulos 1 e 2) | Execução via Containers (Módulo 3) |
 |---|---|---|
 | **Ambiente de Execução** | Depende do runtime do provedor (Railway instalando Node via buildpack; Neon gerenciando instâncias Postgres). | Imagens imutáveis e isoladas via Docker (`node:20-alpine` e `postgres:16-alpine`), idênticas em qualquer máquina ou SO. |
-| **Reprodução Local** | Trabalhosa: exigia clonar o repo, instalar versão compatível de Node.js, rodar `npm install` em 3 pastas, abrir 3 terminais e configurar manualmente 3 bancos no Neon ou local. | Imediata: um único comando (`docker-compose up --build -d`) sobe toda a topologia distribuída (6 containers) sem exigir Node ou Postgres instalados no host. |
+| **Reprodução Local** | Trabalhosa: exigia clonar o repo, instalar versão compatível de Node.js, rodar `npm install` em 3 pastas, abrir 3 terminais e configurar manualmente 3 bancos no Neon ou local. | Imediata: um único comando (`docker compose up --build -d`) sobe toda a topologia distribuída (6 containers) sem exigir Node ou Postgres instalados no host. |
 | **Paridade Dev/Prod** | Baixa: discrepâncias de versão de Node, bibliotecas do SO ou portas no host podiam gerar comportamentos inesperados ("na minha máquina funciona"). | Alta: todo o ambiente (SO Alpine, dependências, variáveis, rede e banco) é declarado em código (`Infrastructure as Code`). |
 | **Segurança e Privilégios** | Processos Node rodando com usuário padrão do host ou da VM. | Isolamento de namespace por container e execução com usuário não-root (`USER node`), limitando a superfície de ataque. |
 | **Persistência de Dados** | Delegada a serviço PaaS (Neon com storage em nuvem gerenciado). | Gerenciada explicitamente pelo grupo através de **Docker Volumes nomeados** independentes por microsserviço. |
 
 ### O que mudou?
-- Antes, a aplicação dependia de serviços de terceiros (Neon e Railway) e do ambiente local do desenvolvedor estar previamente configurado.
-- Agora, a aplicação e seus bancos foram completamente empacotados em artefatos versionáveis (imagens Docker e manifesto Compose), permitindo execução 100% *offline*, padronizada e portátil.
+- Antes, a aplicação dependia de serviços externos (Neon e Railway) e do ambiente local previamente configurado.
+- Agora, a aplicação e seus bancos foram empacotados em artefatos versionáveis (imagens Docker e manifesto Compose), permitindo execução 100% *offline*, padronizada e portátil.
 
 ### O que ficou mais fácil?
-- **Subida em lote com um único comando:** Inicialização de 6 serviços com resolução automática de portas e redes internas.
+- **Subida em lote com um comando:** Inicialização de 6 serviços com resolução automática de portas e redes internas.
 - **Ordem de inicialização determinística:** Com `healthcheck` e `depends_on`, os microsserviços não quebram tentando conectar em bancos que ainda não terminaram o boot.
-- **Isolamento de dependências:** Nenhuma dependência precisa estar instalada no computador de quem for testar além do próprio Docker.
+- **Isolamento de dependências:** Nenhuma dependência precisa estar instalada no host além do próprio Docker.
 
 ### O que ficou mais difícil / Desafios enfrentados?
-- **Gerenciamento de volumes:** Exigiu atenção redobrada para não perder os dados em comandos destrutivos (diferença entre `down` e `down -v`).
+- **Gerenciamento de volumes:** Exigiu atenção para não perder dados com comandos destrutivos (diferença entre `down` e `down -v`).
 - **Comunicação inter-containers:** Substituição de `localhost` por nomes de serviços do Compose (`users-service`, `tasks-db`, etc.) e controle de DNS interno na rede Docker.
-- **Tratamento de sinais:** Necessidade de implementar captura de `SIGTERM`/`SIGINT` no Node.js para que o container não sofresse timeout de 10s ao encerrar.
+- **Tratamento de sinais:** Necessidade de implementar captura de `SIGTERM`/`SIGINT` no Node.js para encerramento limpo sem timeout de 10s.
 
 ---
 
-## Infraestrutura em Nuvem (Módulo 2 - Preservada)
+## Módulo 2 — Infraestrutura em Nuvem (Railway e Neon)
 
-As URLs públicas implantadas no Railway e bancos no Neon continuam disponíveis e ativas para consulta:
+A infraestrutura publicada na nuvem durante o Módulo 2 continua ativa e disponível:
 
-| Serviço | URL Pública (Railway) |
+- **Railway:** responsável pela hospedagem e execução dos serviços `tasks-service`, `users-service` e `notifications-service`, disponibilizando suas APIs por meio de URLs públicas.
+- **Neon:** responsável pelo armazenamento dos dados, com bancos PostgreSQL independentes para cada microsserviço (`tasks-db`, `users-db` e `notifications-db`).
+
+### URLs públicas (Railway)
+
+| Serviço | URL |
 |---|---|
 | `tasks-service` | https://tasks-service-production-dd13.up.railway.app |
 | `users-service` | https://users-service-production-9f90.up.railway.app |
 | `notifications-service` | https://notifications-service-production-c3c4.up.railway.app |
 
-Healthcheck na nuvem: [/health/dependencias](https://tasks-service-production-dd13.up.railway.app/health/dependencias)
+Verificação rápida no navegador: abra [/health/dependencias](https://tasks-service-production-dd13.up.railway.app/health/dependencias). Deve mostrar `{"tasks":"ok","users":"ok","notifications":"ok"}`.
+
+### Diagrama de Arquitetura do Módulo 2
+
+![Diagrama de arquitetura](docs/arquitetura.svg)
+
+| Serviço | Responsabilidade | Banco (Neon) | Porta local |
+|---|---|---|---|
+| tasks-service | CRUD de tarefas; valida o responsável e dispara avisos | tasks-db | 3000 |
+| users-service | CRUD de usuários (responsáveis) | users-db | 3001 |
+| notifications-service | Registra avisos (tarefa atribuída e concluída) | notifications-db | 3002 |
+
+Chamadas entre serviços:
+- tasks-service chama users-service: `GET /users/:id` (síncrono; confirma que o responsável existe).
+- tasks-service chama notifications-service: `POST /notifications` (não bloqueia a resposta).
+
+---
+
+## Como testar a comunicação na nuvem (Railway)
+
+### Fluxo Linux/macOS (curl)
+```bash
+T=https://tasks-service-production-dd13.up.railway.app
+U=https://users-service-production-9f90.up.railway.app
+N=https://notifications-service-production-c3c4.up.railway.app
+
+curl -s $T/health/dependencias; echo
+
+USERID=$(curl -s -X POST $U/users -H "Content-Type: application/json" -d "{\"nome\":\"Maria Silva\",\"email\":\"maria$RANDOM@exemplo.com\"}" | sed -n 's/.*"id":\([0-9]*\).*/\1/p')
+echo "id do usuário: $USERID"
+
+TID=$(curl -s -X POST $T/tasks -H "Content-Type: application/json" -d "{\"titulo\":\"Fazer relatorio\",\"responsavel_id\":$USERID}" | sed -n 's/.*"id":\([0-9]*\).*/\1/p')
+echo "id da tarefa: $TID"
+
+curl -s $T/tasks/$TID; echo
+
+sleep 3
+curl -s "$N/notifications?task_id=$TID"; echo
+
+curl -s -X PUT $T/tasks/$TID -H "Content-Type: application/json" -d '{"status":"concluida"}'; echo
+
+sleep 3
+curl -s "$N/notifications?task_id=$TID"; echo
+
+curl -s $T/tasks/$TID/completo; echo
+```
+
+### Fluxo Windows (PowerShell)
+```powershell
+$T = "https://tasks-service-production-dd13.up.railway.app"
+$U = "https://users-service-production-9f90.up.railway.app"
+$N = "https://notifications-service-production-c3c4.up.railway.app"
+
+Invoke-RestMethod -Uri "$T/health/dependencias"
+
+$u = Invoke-RestMethod -Method Post -Uri "$U/users" -ContentType "application/json; charset=utf-8" -Body (@{nome="Maria Silva"; email="maria$(Get-Random)@exemplo.com"} | ConvertTo-Json)
+
+$t = Invoke-RestMethod -Method Post -Uri "$T/tasks" -ContentType "application/json; charset=utf-8" -Body (@{titulo="Fazer relatorio"; responsavel_id=$u.id} | ConvertTo-Json)
+
+Invoke-RestMethod -Uri "$T/tasks/$($t.id)"
+
+Start-Sleep -Seconds 3
+Invoke-RestMethod -Uri "$N/notifications?task_id=$($t.id)"
+
+Invoke-RestMethod -Method Put -Uri "$T/tasks/$($t.id)" -ContentType "application/json; charset=utf-8" -Body '{"status":"concluida"}'
+
+Start-Sleep -Seconds 3
+Invoke-RestMethod -Uri "$N/notifications?task_id=$($t.id)"
+
+Invoke-RestMethod -Uri "$T/tasks/$($t.id)/completo"
+```
+
+---
+
+## Endpoints das APIs
+
+- **tasks-service:** `GET /health`, `GET /health/dependencias`, `POST /tasks`, `GET /tasks`, `GET /tasks/:id`, `GET /tasks/:id/completo`, `PUT /tasks/:id`, `DELETE /tasks/:id`
+- **users-service:** `GET /health`, `POST /users`, `GET /users`, `GET /users/:id`, `PUT /users/:id`, `DELETE /users/:id`
+- **notifications-service:** `GET /health`, `POST /notifications`, `GET /notifications`, `GET /notifications/:id`
+
+## Variáveis de Ambiente
+
+| Serviço | Variável | Descrição |
+|---|---|---|
+| Todos | `DATABASE_URL` | Connection string do banco PostgreSQL (Neon ou container local) |
+| Todos | `PORT` | Porta do serviço |
+| Todos | `PGSSL` | Define se exige SSL (`true` para Neon na nuvem; `false` para Docker local) |
+| tasks-service | `USERS_SERVICE_URL` | URL base do users-service |
+| tasks-service | `NOTIFICATIONS_SERVICE_URL` | URL base do notifications-service |
+| tasks-service | `REQUEST_TIMEOUT_MS` | Timeout das chamadas HTTP (padrão 5000 ms) |
+
+---
+
+## Como Rodar Localmente sem Docker (Manual)
+
+Requisitos: Node.js 18+ e instâncias do PostgreSQL acessíveis.
+
+```bash
+cd users-service && npm install && cp .env.example .env && npm start
+cd notifications-service && npm install && cp .env.example .env && npm start
+cd tasks-service && npm install && cp .env.example .env && npm start
+```
+
+As tabelas são criadas automaticamente pelos scripts de inicialização de cada microsserviço.
