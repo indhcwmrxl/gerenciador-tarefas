@@ -207,27 +207,27 @@ curl -s $T/tasks/$TID/completo; echo
 
 ### Fluxo Windows (PowerShell)
 ```powershell
-$T = "https://tasks-service-production-dd13.up.railway.app"
-$U = "https://users-service-production-9f90.up.railway.app"
-$N = "https://notifications-service-production-c3c4.up.railway.app"
+$urlTasks = "https://tasks-service-production-dd13.up.railway.app"
+$urlUsers = "https://users-service-production-9f90.up.railway.app"
+$urlNotifs = "https://notifications-service-production-c3c4.up.railway.app"
 
-Invoke-RestMethod -Uri "$T/health/dependencias"
+Invoke-RestMethod -Uri "$urlTasks/health/dependencias"
 
-$u = Invoke-RestMethod -Method Post -Uri "$U/users" -ContentType "application/json; charset=utf-8" -Body (@{nome="Maria Silva"; email="maria$(Get-Random)@exemplo.com"} | ConvertTo-Json)
+$createdUser = Invoke-RestMethod -Method Post -Uri "$urlUsers/users" -ContentType "application/json; charset=utf-8" -Body (@{nome="Maria Silva"; email="maria$(Get-Random)@exemplo.com"} | ConvertTo-Json)
 
-$t = Invoke-RestMethod -Method Post -Uri "$T/tasks" -ContentType "application/json; charset=utf-8" -Body (@{titulo="Fazer relatorio"; responsavel_id=$u.id} | ConvertTo-Json)
+$createdTask = Invoke-RestMethod -Method Post -Uri "$urlTasks/tasks" -ContentType "application/json; charset=utf-8" -Body (@{titulo="Fazer relatorio"; responsavel_id=$createdUser.id} | ConvertTo-Json)
 
-Invoke-RestMethod -Uri "$T/tasks/$($t.id)"
-
-Start-Sleep -Seconds 3
-Invoke-RestMethod -Uri "$N/notifications?task_id=$($t.id)"
-
-Invoke-RestMethod -Method Put -Uri "$T/tasks/$($t.id)" -ContentType "application/json; charset=utf-8" -Body '{"status":"concluida"}'
+Invoke-RestMethod -Uri "$urlTasks/tasks/$($createdTask.id)"
 
 Start-Sleep -Seconds 3
-Invoke-RestMethod -Uri "$N/notifications?task_id=$($t.id)"
+Invoke-RestMethod -Uri "$urlNotifs/notifications?task_id=$($createdTask.id)"
 
-Invoke-RestMethod -Uri "$T/tasks/$($t.id)/completo"
+Invoke-RestMethod -Method Put -Uri "$urlTasks/tasks/$($createdTask.id)" -ContentType "application/json; charset=utf-8" -Body '{"status":"concluida"}'
+
+Start-Sleep -Seconds 3
+Invoke-RestMethod -Uri "$urlNotifs/notifications?task_id=$($createdTask.id)"
+
+Invoke-RestMethod -Uri "$urlTasks/tasks/$($createdTask.id)/completo"
 ```
 
 ---

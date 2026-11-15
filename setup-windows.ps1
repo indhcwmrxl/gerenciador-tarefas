@@ -92,7 +92,26 @@ if (-not (Test-Path "docker-compose.yml")) {
 
 # 5. Construir e subir todos os 6 containers
 Write-Host "`n[5/5] Construindo imagens e subindo os 6 containers..." -ForegroundColor Yellow
-docker compose up --build -d
+
+$useLegacyCompose = $false
+try {
+    $ver = docker compose version 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+            $useLegacyCompose = $true
+        }
+    }
+} catch {
+    if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+        $useLegacyCompose = $true
+    }
+}
+
+if ($useLegacyCompose) {
+    docker-compose up --build -d
+} else {
+    docker compose up --build -d
+}
 
 Write-Host "`nAguardando todos os containers e bancos ficarem saudáveis (healthy)..." -ForegroundColor Yellow
 $pronto = $false
@@ -112,7 +131,11 @@ Write-Host "`n==================================================================
 Write-Host "          TUDO PRONTO! TODOS OS CONTAINERS ESTÃO ATIVOS!          " -ForegroundColor Green
 Write-Host "==================================================================" -ForegroundColor Green
 
-docker compose ps
+if ($useLegacyCompose) {
+    docker-compose ps
+} else {
+    docker compose ps
+}
 
 Write-Host "`nExecutando teste funcional dos endpoints..." -ForegroundColor Cyan
 Start-Sleep -Seconds 2
