@@ -18,11 +18,6 @@ Histórico de entregas e módulos preservados nas tags do Git:
 
 Neste módulo, todos os componentes do sistema foram empacotados em containers padronizados e orquestrados localmente de forma autônoma:
 
-### Vídeo de Demonstração (Módulo 3)
-
-> [!IMPORTANT]
-> **Link do Vídeo no YouTube (Não Listado):** `[INSERIR_LINK_AQUI]`  
-> *(Demonstração dos 6 containers subindo via Docker Compose, execução do teste de comunicação e validação da persistência dos dados após `docker-compose down` / `docker-compose up`)*.
 
 ### O que foi implementado:
 1. **Dockerfile individual para cada microsserviço:**
@@ -40,30 +35,7 @@ Neste módulo, todos os componentes do sistema foram empacotados em containers p
    - **Inicialização determinística:** healthchecks nos bancos (`pg_isready`) combinados com `depends_on: { condition: service_healthy }`.
    - Rede interna dedicada do Docker (`gerenciador-network`).
 
-3. **Arquitetura de Containers (Topologia Local):**
-   ```
-                          [ Host / Navegador / curl ]
-                                       |
-             +-------------------------+-------------------------+
-             | :3000                   | :3001                   | :3002
-             v                         v                         v
-     +-----------------+       +-----------------+       +-----------------------+
-     |  tasks-service  | ----> |  users-service  |       | notifications-service |
-     | (Node.js Alpine)|  HTTP | (Node.js Alpine)|       |   (Node.js Alpine)    |
-     +-----------------+  REST +-----------------+       +-----------------------+
-             |                         |                             |
-             | HTTP (async fire&forget)|                             |
-             +-------------------------|-----------------------------+
-             |                         |                             |
-             v                         v                             v
-     +-----------------+       +-----------------+       +-----------------------+
-     |    tasks-db     |       |    users-db     |       |   notifications-db    |
-     | (Postgres 16)   |       | (Postgres 16)   |       |     (Postgres 16)     |
-     +-----------------+       +-----------------+       +-----------------------+
-             |                         |                             |
-             v                         v                             v
-     [(vol) tasks_data]        [(vol) users_data]        [(vol) notifications_data]
-   ```
+
 
 ### Mapeamento de Serviços, Portas e Volumes
 
