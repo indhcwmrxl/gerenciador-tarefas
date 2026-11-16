@@ -3,8 +3,7 @@
 
 # Gerenciador de Tarefas
 
-Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).  
-**Docente(s):** Glaucia Melissa (Responsável pela disciplina) / Luiziane Paulino dos Santos (Estágio Docência)  
+Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).   
 **Domínio:** Gerenciador de tarefas (evento natural: *"tarefa concluída"*, base para o Módulo 4).
 
 Histórico de entregas e módulos preservados nas tags do Git:
