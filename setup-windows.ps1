@@ -1,6 +1,6 @@
 ﻿# ==============================================================================
 # Script de Instalação e Inicialização Automatizada (Windows 11)
-# Gerenciador de Tarefas - Módulo 3: Containers (Sistemas Distribuídos - UERN)
+# Gerenciador de Tarefas - Módulo 4: Mensageria e Streaming (Sistemas Distribuídos - UERN)
 # ==============================================================================
 
 # Força codificação UTF-8 no console do PowerShell
@@ -79,29 +79,29 @@ $pastaProjeto = "gerenciador-tarefas"
 
 if (-not (Test-Path "docker-compose.yml")) {
     if (-not (Test-Path $pastaProjeto)) {
-        git clone -b entrega-3-containers $repoUrl
+        git clone -b entrega-4-mensageria $repoUrl
         Set-Location $pastaProjeto
     } else {
         Set-Location $pastaProjeto
-        git checkout entrega-3-containers
-        git pull origin entrega-3-containers
+        git checkout entrega-4-mensageria
+        git pull origin entrega-4-mensageria
     }
 } else {
     Write-Host "Executando diretamente da pasta do projeto." -ForegroundColor Green
 }
 
-# 5. Construir e subir todos os 6 containers
-Write-Host "`n[5/5] Construindo imagens e subindo os 6 containers..." -ForegroundColor Yellow
+# 5. Construir e subir todos os 7 containers
+Write-Host "`n[5/5] Construindo imagens e subindo os 7 containers (3 microsserviços + 3 bancos + RabbitMQ)..." -ForegroundColor Yellow
 docker compose up --build -d
 
-Write-Host "`nAguardando todos os containers e bancos ficarem saudáveis (healthy)..." -ForegroundColor Yellow
+Write-Host "`nAguardando todos os containers, bancos e RabbitMQ ficarem saudáveis (healthy)..." -ForegroundColor Yellow
 $pronto = $false
 $tentativasHealth = 0
-while (-not $pronto -and $tentativasHealth -lt 30) {
+while (-not $pronto -and $tentativasHealth -lt 35) {
     Start-Sleep -Seconds 2
     try {
         $res = Invoke-RestMethod -Uri "http://localhost:3000/health/dependencias" -ErrorAction SilentlyContinue
-        if ($res.tasks -eq "ok" -and $res.users -eq "ok" -and $res.notifications -eq "ok") {
+        if ($res.tasks -eq "ok" -and $res.users -eq "ok" -and $res.notifications -eq "ok" -and $res.rabbitmq -eq "ok") {
             $pronto = $true
         }
     } catch {}
@@ -118,4 +118,9 @@ Write-Host "`nExecutando teste funcional dos endpoints..." -ForegroundColor Cyan
 Start-Sleep -Seconds 2
 if (Test-Path ".\scripts\test-endpoints.ps1") {
     .\scripts\test-endpoints.ps1
+}
+
+Write-Host "`nExecutando teste funcional de mensageria (RabbitMQ)..." -ForegroundColor Cyan
+if (Test-Path ".\scripts\test-messaging.ps1") {
+    .\scripts\test-messaging.ps1
 }

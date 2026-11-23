@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 620" width="980" height="620" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="azul" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#2f6db5"/></marker>
+    <marker id="verde" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#2e7d4f"/></marker>
+    <marker id="laranja" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#c8691a"/></marker>
+    <marker id="roxo" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#7a2e99"/></marker>
+    <marker id="vermelho" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="#d32f2f"/></marker>
+  </defs>
+
+  <!-- Fundo -->
+  <rect width="980" height="620" fill="#ffffff"/>
+  <text x="490" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f3a5f">Módulo 4: Arquitetura com Mensageria RabbitMQ e Microsserviços</text>
+  <text x="490" y="52" text-anchor="middle" font-size="12" fill="#666666">Comunicação Híbrida: Síncrona (HTTP/REST) e Assíncrona Orientada a Eventos (AMQP 0-9-1)</text>
+
+  <!-- Cliente -->
+  <rect x="380" y="70" width="220" height="58" rx="8" fill="#e3eefb" stroke="#1f3a5f" stroke-width="2"/>
+  <text x="490" y="96" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f3a5f">Cliente / Navegador / API</text>
+  <text x="490" y="115" text-anchor="middle" font-size="11" fill="#555555">Requisições HTTP REST (:3000, :3001, :3002)</text>
+
+  <line x1="490" y1="128" x2="490" y2="188" stroke="#2f6db5" stroke-width="2.5" marker-end="url(#azul)"/>
+  <text x="502" y="160" font-size="12" fill="#2f6db5">PUT /tasks/:id (concluida)</text>
+
+  <!-- Microsserviço 1: users-service -->
+  <rect x="30" y="190" width="220" height="130" rx="8" fill="#e5f4ea" stroke="#1f3a5f" stroke-width="2"/>
+  <text x="140" y="218" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f3a5f">users-service</text>
+  <text x="140" y="238" text-anchor="middle" font-size="11" fill="#0d5926">Porta :3001</text>
+  <text x="140" y="260" text-anchor="middle" font-size="12" fill="#444444">Gerencia Usuários (CRUD)</text>
+  <text x="140" y="280" text-anchor="middle" font-size="11" fill="#666666">Valida existência do</text>
+  <text x="140" y="296" text-anchor="middle" font-size="11" fill="#666666">responsável da tarefa</text>
+
+  <!-- Microsserviço 2: tasks-service (PRODUTOR) -->
+  <rect x="380" y="190" width="220" height="130" rx="8" fill="#e8eaf6" stroke="#1a237e" stroke-width="2.5"/>
+  <rect x="390" y="198" width="80" height="20" rx="4" fill="#3949ab"/>
+  <text x="430" y="212" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">PRODUTOR</text>
+  <text x="490" y="238" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a237e">tasks-service</text>
+  <text x="490" y="258" text-anchor="middle" font-size="11" fill="#283593">Porta :3000</text>
+  <text x="490" y="280" text-anchor="middle" font-size="12" fill="#333333">Gerencia Tarefas (CRUD)</text>
+  <text x="490" y="300" text-anchor="middle" font-size="11" font-weight="bold" fill="#d32f2f">Publica evento de conclusão</text>
+
+  <!-- Comunicação Síncrona HTTP entre tasks e users -->
+  <line x1="380" y1="245" x2="252" y2="245" stroke="#2e7d4f" stroke-width="2" marker-end="url(#verde)"/>
+  <text x="316" y="235" text-anchor="middle" font-size="11" fill="#2e7d4f">GET /users/:id (Síncrono)</text>
+
+  <!-- BROKER: RabbitMQ -->
+  <rect x="360" y="360" width="260" height="110" rx="10" fill="#fff3e0" stroke="#e65100" stroke-width="2.5"/>
+  <rect x="370" y="368" width="110" height="20" rx="4" fill="#e65100"/>
+  <text x="425" y="382" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">BROKER AMQP</text>
+  <text x="490" y="405" text-anchor="middle" font-size="16" font-weight="bold" fill="#bf360c">RabbitMQ 3 Alpine</text>
+  <text x="490" y="423" text-anchor="middle" font-size="11" fill="#555555">Portas: :5672 (AMQP) | :15672 (UI)</text>
+  <rect x="380" y="432" width="220" height="26" rx="4" fill="#ffe0b2" stroke="#f57c00"/>
+  <text x="490" y="449" text-anchor="middle" font-size="11" font-weight="bold" fill="#b23c00">Fila Durável: "tarefa_concluida"</text>
+
+  <!-- Publicação no Broker (tasks-service -> RabbitMQ) -->
+  <line x1="490" y1="320" x2="490" y2="358" stroke="#d32f2f" stroke-width="2.5" marker-end="url(#vermelho)"/>
+  <text x="502" y="344" font-size="11" font-weight="bold" fill="#d32f2f">Publica Evento (AMQP)</text>
+
+  <!-- Microsserviço 3: notifications-service (CONSUMIDOR) -->
+  <rect x="730" y="190" width="220" height="130" rx="8" fill="#f3e5f5" stroke="#4a148c" stroke-width="2.5"/>
+  <rect x="740" y="198" width="90" height="20" rx="4" fill="#6a1b9a"/>
+  <text x="785" y="212" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">CONSUMIDOR</text>
+  <text x="840" y="238" text-anchor="middle" font-size="15" font-weight="bold" fill="#4a148c">notifications-service</text>
+  <text x="840" y="258" text-anchor="middle" font-size="11" fill="#6a1b9a">Porta :3002</text>
+  <text x="840" y="280" text-anchor="middle" font-size="12" fill="#333333">Consome Fila Assíncrona</text>
+  <text x="840" y="300" text-anchor="middle" font-size="11" font-weight="bold" fill="#7a2e99">Confirma com ACK manual</text>
+
+  <!-- Consumo do Broker (RabbitMQ -> notifications-service) -->
+  <path d="M 620 415 L 840 415 L 840 322" fill="none" stroke="#7a2e99" stroke-width="2.5" marker-end="url(#roxo)"/>
+  <text x="730" y="405" text-anchor="middle" font-size="11" font-weight="bold" fill="#7a2e99">Consumo Contínuo + ACK (AMQP)</text>
+
+  <!-- Bancos de Dados -->
+  <!-- users-db -->
+  <path d="M90,500 v40 a50,10 0 0 0 100,0 v-40" fill="#fdeedd" stroke="#c8691a" stroke-width="1.8"/>
+  <ellipse cx="140" cy="500" rx="50" ry="10" fill="#fff6ea" stroke="#c8691a" stroke-width="1.8"/>
+  <text x="140" y="524" text-anchor="middle" font-size="12" font-weight="bold" fill="#c8691a">users-db</text>
+  <text x="140" y="538" text-anchor="middle" font-size="10" fill="#666666">Postgres 16 (:5431)</text>
+  <line x1="140" y1="320" x2="140" y2="488" stroke="#c8691a" stroke-width="1.8" marker-end="url(#laranja)"/>
+
+  <!-- tasks-db -->
+  <path d="M250,500 v40 a50,10 0 0 0 100,0 v-40" fill="#fdeedd" stroke="#c8691a" stroke-width="1.8"/>
+  <ellipse cx="300" cy="500" rx="50" ry="10" fill="#fff6ea" stroke="#c8691a" stroke-width="1.8"/>
+  <text x="300" y="524" text-anchor="middle" font-size="12" font-weight="bold" fill="#c8691a">tasks-db</text>
+  <text x="300" y="538" text-anchor="middle" font-size="10" fill="#666666">Postgres 16 (:5432)</text>
+  <line x1="420" y1="320" x2="330" y2="488" stroke="#c8691a" stroke-width="1.8" marker-end="url(#laranja)"/>
+
+  <!-- notifications-db -->
+  <path d="M790,500 v40 a50,10 0 0 0 100,0 v-40" fill="#fdeedd" stroke="#c8691a" stroke-width="1.8"/>
+  <ellipse cx="840" cy="500" rx="50" ry="10" fill="#fff6ea" stroke="#c8691a" stroke-width="1.8"/>
+  <text x="840" y="524" text-anchor="middle" font-size="12" font-weight="bold" fill="#c8691a">notifications-db</text>
+  <text x="840" y="538" text-anchor="middle" font-size="10" fill="#666666">Postgres 16 (:5433)</text>
+  <line x1="840" y1="320" x2="840" y2="488" stroke="#c8691a" stroke-width="1.8" marker-end="url(#laranja)"/>
+
+  <!-- Legenda inferior -->
+  <rect x="30" y="570" width="920" height="35" rx="6" fill="#f8f9fa" stroke="#e0e0e0"/>
+  <text x="50" y="592" font-size="11" fill="#333333">Legenda:</text>
+  <circle cx="115" cy="588" r="5" fill="#2e7d4f"/>
+  <text x="125" y="592" font-size="11" fill="#2e7d4f">Comunicação Síncrona HTTP/REST</text>
+  <circle cx="345" cy="588" r="5" fill="#d32f2f"/>
+  <text x="355" y="592" font-size="11" fill="#d32f2f">Publicação Assíncrona AMQP</text>
+  <circle cx="535" cy="588" r="5" fill="#7a2e99"/>
+  <text x="545" y="592" font-size="11" fill="#7a2e99">Consumo com ACK AMQP</text>
+  <circle cx="715" cy="588" r="5" fill="#c8691a"/>
+  <text x="725" y="592" font-size="11" fill="#c8691a">Persistência SQL Independente</text>
+</svg>

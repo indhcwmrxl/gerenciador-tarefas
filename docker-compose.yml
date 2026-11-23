@@ -2,6 +2,30 @@ version: '3.8'
 
 services:
   # ==========================================
+  # Mensageria e Streaming de Eventos (Módulo 4)
+  # ==========================================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"    # Porta AMQP para produtores e consumidores
+      - "15672:15672"  # Painel Web de Gestão (RabbitMQ Management UI)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - gerenciador-rede
+
+  # ==========================================
   # Bancos de Dados PostgreSQL (Independentes)
   # ==========================================
   users-db:
@@ -99,10 +123,13 @@ services:
       PORT: 3002
       DATABASE_URL: postgresql://postgres:postgres@notifications-db:5432/notifications_db
       PGSSL: "false"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     ports:
       - "3002:3002"
     depends_on:
       notifications-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
@@ -125,6 +152,7 @@ services:
       USERS_SERVICE_URL: http://users-service:3001
       NOTIFICATIONS_SERVICE_URL: http://notifications-service:3002
       REQUEST_TIMEOUT_MS: 5000
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     ports:
       - "3000:3000"
     depends_on:
@@ -133,6 +161,8 @@ services:
       users-service:
         condition: service_healthy
       notifications-service:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
@@ -153,6 +183,8 @@ volumes:
     name: gerenciador_tasks_db_data
   notifications_db_data:
     name: gerenciador_notifications_db_data
+  rabbitmq_data:
+    name: gerenciador_rabbitmq_data
 
 networks:
   gerenciador-rede:

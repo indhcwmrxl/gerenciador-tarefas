@@ -2,6 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { pool, init } = require('./db');
+const {
+  iniciarConsumidorRabbitMQ,
+  fecharRabbitMQ,
+  verificarConexaoRabbitMQ,
+} = require('./rabbitmq');
 
 const app = express();
 app.use(cors());
@@ -12,7 +17,9 @@ function lerId(valor) {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (req, res) =>
+  res.json({ status: 'ok', rabbitmq: verificarConexaoRabbitMQ() })
+);
 
 app.get('/', (req, res) =>
   res.json({
@@ -81,8 +88,15 @@ const PORT = process.env.PORT || 3002;
 
 init()
   .then(() => {
+    // Inicia o consumidor RabbitMQ assíncrono em segundo plano
+    iniciarConsumidorRabbitMQ(pool).catch((e) =>
+      console.warn('[RabbitMQ] Falha na conexão inicial do consumidor:', e.message)
+    );
+
     const server = app.listen(PORT, () => console.log(`notifications-service rodando na porta ${PORT}`));
-    const shutdown = () => {
+    const shutdown = async () => {
+      console.log('Encerrando notifications-service...');
+      await fecharRabbitMQ();
       server.close(() => {
         pool.end();
         process.exit(0);

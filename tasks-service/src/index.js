@@ -3,6 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const { pool, init } = require('./db');
 const { buscarUsuario, notificar, verificarSaude } = require('./clients');
+const {
+  conectarRabbitMQ,
+  publicarTarefaConcluida,
+  fecharRabbitMQ,
+  verificarConexaoRabbitMQ,
+} = require('./rabbitmq');
 
 const app = express();
 app.use(cors());
@@ -42,7 +48,12 @@ app.get('/health/dependencias', async (req, res) => {
     verificarSaude(process.env.USERS_SERVICE_URL),
     verificarSaude(process.env.NOTIFICATIONS_SERVICE_URL),
   ]);
-  res.json({ tasks: 'ok', users, notifications });
+  res.json({
+    tasks: 'ok',
+    users,
+    notifications,
+    rabbitmq: verificarConexaoRabbitMQ(),
+  });
 });
 
 app.get('/', (req, res) =>
@@ -85,7 +96,10 @@ app.post('/tasks', async (req, res) => {
       notificar({ tipo: 'tarefa_atribuida', mensagem: `Tarefa "${tarefa.titulo}" atribuída a ${respNome}.`, task_id: tarefa.id });
     }
     if (tarefa.status === 'concluida') {
-      notificar({ tipo: 'tarefa_concluida', mensagem: `Tarefa "${tarefa.titulo}" foi concluída.`, task_id: tarefa.id });
+      // Módulo 4: Publicação assíncrona do evento via RabbitMQ (AMQP)
+      publicarTarefaConcluida(tarefa).catch((err) => {
+        console.error('[RabbitMQ] Falha ao publicar evento de conclusão:', err.message);
+      });
     }
 
     res.status(201).json(tarefa);
@@ -189,7 +203,10 @@ app.put('/tasks/:id', async (req, res) => {
       notificar({ tipo: 'tarefa_atribuida', mensagem: `Tarefa "${tarefa.titulo}" atribuída a ${novoNome}.`, task_id: tarefa.id });
     }
     if (tarefa.status === 'concluida' && antes.status !== 'concluida') {
-      notificar({ tipo: 'tarefa_concluida', mensagem: `Tarefa "${tarefa.titulo}" foi concluída.`, task_id: tarefa.id });
+      // Módulo 4: Publicação assíncrona do evento via RabbitMQ (AMQP)
+      publicarTarefaConcluida(tarefa).catch((err) => {
+        console.error('[RabbitMQ] Falha ao publicar evento de conclusão:', err.message);
+      });
     }
 
     res.json(tarefa);
@@ -217,8 +234,13 @@ const PORT = process.env.PORT || 3000;
 
 init()
   .then(() => {
+    // Inicializa conexão com o RabbitMQ em segundo plano
+    conectarRabbitMQ().catch((e) => console.warn('[RabbitMQ] Falha na conexão inicial:', e.message));
+
     const server = app.listen(PORT, () => console.log(`tasks-service rodando na porta ${PORT}`));
-    const shutdown = () => {
+    const shutdown = async () => {
+      console.log('Encerrando tasks-service...');
+      await fecharRabbitMQ();
       server.close(() => {
         pool.end();
         process.exit(0);

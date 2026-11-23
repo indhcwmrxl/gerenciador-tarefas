@@ -1,5 +1,17 @@
 # Changelog
 
+## [entrega-4-mensageria]
+- Evolução da comunicação entre microsserviços para arquitetura orientada a eventos assíncronos (AMQP 0-9-1)
+- Novo container RabbitMQ (`rabbitmq:3-management-alpine`) orquestrado no Docker Compose com volume persistente (`gerenciador_rabbitmq_data`) e painel Web Management (:15672)
+- Produtor de eventos implementado no `tasks-service`: publicação resiliente do evento de domínio `tarefa_concluida` na exchange direta `tarefas.eventos`
+- Consumidor de eventos implementado no `notifications-service`: processamento assíncrono da fila durável `tarefa_concluida` com confirmação manual (`channel.ack`) e gravação no banco PostgreSQL
+- Conexão tolerante a falhas com retentativas automáticas e reconexão automática contínua em ambos os serviços
+- Monitoramento de dependências ampliado em `GET /health/dependencias` com checagem ativa do RabbitMQ
+- Scripts automatizados de validação ponta a ponta: `scripts/test-messaging.sh` e `scripts/test-messaging.ps1`
+- Script utilitário para consumo de demonstração em tempo real: `scripts/standalone-consumer.js`
+- Novo diagrama de arquitetura: `docs/arquitetura-modulo-4.svg`
+- Documento analítico completo: `docs/modulo-4-mensageria-e-streaming.md` contendo projeto conceitual com Streaming de Eventos (Kafka/Redpanda), novos consumidores (Auditoria, Analytics, Busca), comparação conceitual e justificativa técnica
+
 ## [entrega-3-containers]
 - Conteinerização individual de todos os microsserviços via Dockerfile (Node.js 20 Alpine, multi-stage build, execução sem root com usuário `node`)
 - Orquestração completa do ambiente local via `docker-compose.yml` (3 microsserviços + 3 instâncias de banco PostgreSQL independentes)
