@@ -1,62 +1,62 @@
-# Gerenciador de Tarefas
+# Sistema Distribuído de Gerenciamento de Tarefas
 
-Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).  
-**Docente(s):** Glaucia Melissa (Responsável pela disciplina) / Luiziane Paulino dos Santos (Estágio Docência)  
-**Domínio:** Gerenciador de Tarefas (evento natural: *"tarefa concluída"*, base para o Módulo 4).
+Implementação incremental desenvolvida no âmbito da disciplina de **Sistemas Distribuídos** do Departamento de Ciência da Computação da Universidade do Estado do Rio Grande do Norte (DCC/UERN).  
+**Corpo Docente:** Profa. Dra. Glaucia Melissa / Ma. Luiziane Paulino dos Santos  
+**Domínio de Aplicação:** Orquestração e controle de ciclo de vida de tarefas transacionais com emissão de eventos de domínio (`tarefa_concluida`).
 
-Histórico de entregas e módulos preservados nas tags do Git:
-- `entrega-4-mensageria`: Módulo 4 — Comunicação em Sistemas Distribuídos: Mensageria Assíncrona com RabbitMQ (AMQP 0-9-1) e Análise/Projeto de Streaming de Eventos (Kafka/Redpanda).
-- `entrega-3-containers`: Módulo 3 — Conteinerização individual via Dockerfile e orquestração completa via Docker Compose com bancos locais e volumes persistentes.
-- `entrega-2-microsservicos`: Módulo 2 — Decomposição em 3 microsserviços independentes com comunicação síncrona HTTP/REST.
-- `entrega-1-cloud`: Módulo 1 — API monolítica inicial publicada em nuvem com banco gerenciado (Neon/Railway).
+Histórico de evolução arquitetural preservado nas tags do repositório:
+- `entrega-4-mensageria`: Módulo 4 — Comunicação Assíncrona via AMQP (RabbitMQ) e Análise Formal de Streaming Distribuído (Kafka/Redpanda).
+- `entrega-3-containers`: Módulo 3 — Empacotamento, isolamento e orquestração determinística via Docker e Docker Compose.
+- `entrega-2-microsservicos`: Módulo 2 — Decomposição arquitetural em microsserviços autônomos com comunicação síncrona HTTP/REST.
+- `entrega-1-cloud`: Módulo 1 — Prototipagem cliente-servidor monolítica com persistência gerenciada em nuvem.
 
 ---
 
-## Módulo 4 — Mensageria e Streaming de Eventos (Novidade)
+## Módulo 4 — Comunicação em Sistemas Distribuídos: Mensageria (AMQP) e Streaming de Eventos
 
-Neste módulo, a comunicação entre os microsserviços evoluiu do acoplamento síncrono HTTP para o paradigma **orientado a eventos assíncronos**, integrando o message broker **RabbitMQ** ao ecossistema de containers e analisando a modelagem alternativa com **Streaming de Eventos (Apache Kafka / Redpanda)**.
+Nesta etapa, o acoplamento temporal inerente às comunicações síncronas HTTP/REST foi eliminado mediante a introdução de uma arquitetura orientada a eventos assíncronos baseada no protocolo **AMQP 0-9-1**. O sistema incorpora um Message Broker intermediário (**RabbitMQ**) para desacoplar a emissão do estado de conclusão da tarefa do respectivo processamento de notificações, complementado pela modelagem analítica sob o paradigma de **Streaming de Eventos** (Apache Kafka/Redpanda).
 
-### Vídeo de Demonstração (Módulo 4)
+### Registro Audiovisual de Validação
 
 > [!IMPORTANT]
-> **Link do Vídeo no YouTube (Não Listado):** `[INSERIR_LINK_AQUI]`  
-> *(Demonstração do RabbitMQ no Docker Compose, execução do teste de mensageria com tarefas concluídas, publicação no produtor, consumo com confirmação manual no consumidor e visualização no RabbitMQ Management UI)*.
+> **Registro de Demonstração Experimental:** `[INSERIR_LINK_AQUI]`  
+> *(Evidência empírica da inicialização da topologia, publicação persistente pelo nó tasks-service, roteamento via exchange direta, consumo com confirmação manual (ACK) pelo nó notifications-service e telemetria de filas na API de gestão do broker)*.
 
 ---
 
-### O que foi implementado:
+### Especificação da Implementação Prática
 
-1. **Broker de Mensageria RabbitMQ em Container Oficial:**
-   - Adicionado o container `rabbitmq` utilizando a imagem oficial enxuta `rabbitmq:3-management-alpine`.
-   - Porta AMQP `5672` para troca de mensagens entre aplicações e porta `15672` com painel web completo (**RabbitMQ Management UI**, acessível via `http://localhost:15672` com login `guest`/`guest`).
-   - Volume persistente nomeado `gerenciador_rabbitmq_data` garantindo a durabilidade do estado do broker e mensagens enfileiradas.
-   - Healthcheck nativo com `rabbitmq-diagnostics -q ping`.
+1. **Topologia e Configuração do Message Broker:**
+   - Implantação do daemon RabbitMQ em container dedicado através da imagem oficial `rabbitmq:3-management-alpine`.
+   - Exposição das interfaces de rede: porta TCP `5672` (protocolo AMQP) e porta TCP `15672` (interface HTTP REST e painel de telemetria).
+   - Persistência estruturada em volume nomeado `gerenciador_rabbitmq_data`, assegurando durabilidade de mensagens e metadados de filas entre reinicializações de nó.
+   - Sonda de integridade (*liveness/readiness probe*) parametrizada via `rabbitmq-diagnostics -q ping`.
 
-2. **Produtor de Eventos (`tasks-service`):**
-   - Biblioteca cliente oficial `amqplib`.
-   - Conexão tolerante a falhas com retentativas automáticas e reconexão contínua em segundo plano.
-   - Ao transicionar o status de uma tarefa para `"concluida"` (`POST /tasks` ou `PUT /tasks/:id`), dispara o evento `tarefa_concluida` para a exchange direta `tarefas.eventos` com routing key `tarefa.concluida`.
-   - Mensagens persistentes (`persistent: true`) com payload JSON estruturado contendo ID, título, responsável e timestamp.
+2. **Nó Produtor (`tasks-service`):**
+   - Integração da biblioteca cliente `amqplib` com camada de resiliência e reconexão automática com backoff exponencial.
+   - Detecção de transição de estado da entidade (`status` -> `"concluida"`).
+   - Serialização do payload JSON e publicação na exchange direta `tarefas.eventos` sob a chave de roteamento `tarefa.concluida`.
+   - Garantia de durabilidade mediante parametrização do cabeçalho `persistent: true`.
 
-3. **Consumidor de Eventos (`notifications-service`):**
-   - Declara e escuta a fila durável `tarefa_concluida` vinculada à exchange.
-   - Configurado com `prefetch(1)` (*fair dispatch*) para equilíbrio de carga.
-   - Confirmação explícita de processamento via `channel.ack(msg)` após gravação bem-sucedida no banco PostgreSQL `notifications_db`.
-   - Tratamento de exceção com `nack` para reprocessamento seguro em caso de indisponibilidade momentânea do banco.
+3. **Nó Consumidor (`notifications-service`):**
+   - Declaração idempotente e vinculação à fila durável `tarefa_concluida`.
+   - Configuração de vazão unitária via `prefetch(1)` (*fair dispatching*), mitigando sobrecarga e garantindo distribuição equitativa entre instâncias concorrentes.
+   - Semântica de entrega *at-least-once*: o processamento é concluído com persistência transacional ACID no PostgreSQL (`notifications-db`) antes da emissão do reconhecimento manual explícito (`channel.ack(msg)`).
+   - Tratamento de faltas com instrução `channel.nack` e política de re-enfileiramento seguro em caso de indisponibilidade transitória do armazenamento.
 
-4. **Monitoramento e Observabilidade:**
-   - Rota `GET /health/dependencias` atualizada para verificar a saúde e a conectividade com o RabbitMQ em tempo real (`{"tasks":"ok","users":"ok","notifications":"ok","rabbitmq":"ok"}`).
-   - Encerramento gracioso (*graceful shutdown*) de canais e conexões AMQP ao receber sinais `SIGTERM` ou `SIGINT`.
+4. **Sondagem de Dependências e Desligamento Gracioso (*Graceful Shutdown*):**
+   - Extensão da sonda `/health/dependencias` no `tasks-service` para verificação ativa da integridade do canal AMQP em tempo real (`{"tasks":"ok","users":"ok","notifications":"ok","rabbitmq":"ok"}`).
+   - Interceptação de sinais POSIX `SIGTERM` e `SIGINT`, assegurando o esvaziamento ordenado de buffers e fechamento simétrico de conexões TCP.
 
 ---
 
-### Diagrama de Arquitetura do Módulo 4
+### Topologia Arquitetural do Módulo 4
 
-![Diagrama de Arquitetura Módulo 4](docs/arquitetura-modulo-4.svg)
+![Topologia Arquitetural Módulo 4](docs/arquitetura-modulo-4.svg)
 
 ```
 +-----------------------------------------------------------------------------------------+
-|                    FLUXO DE MENSAGERIA IMPLEMENTADO (AMQP 0-9-1)                        |
+|                  FLUXO DE TRANSMISSÃO ASSÍNCRONA AMQP 0-9-1                             |
 |                                                                                         |
 |   +-------------------+    publica evento    +-------------------+   consome evento     |
 |   |   tasks-service   | -------------------> |     RabbitMQ      | ------------------>  |
@@ -64,7 +64,7 @@ Neste módulo, a comunicação entre os microsserviços evoluiu do acoplamento s
 |   +-------------------+                      +-------------------+                      |
 |             |                                          |                                |
 |             v                                          v                                |
-|       [ tasks-db ]                           [ Fila Persistente ]                       |
+|       [ tasks-db ]                           [ Fila Durável ]                           |
 |      (Postgres 16)                           (tarefa_concluida)                         |
 |                                                        |                                |
 |                                                        v                                |
@@ -81,23 +81,23 @@ Neste módulo, a comunicação entre os microsserviços evoluiu do acoplamento s
 
 ---
 
-### Mapeamento Completo de Serviços e Containers (7 Containers)
+### Mapeamento da Infraestrutura Distribuída (Topologia de 7 Nós)
 
-| Container | Imagem Base | Portas no Host | Finalidade / Papel | Volume Persistente |
+| Nó / Container | Imagem Base | Interfaces de Rede | Função Arquitetural | Estrutura de Persistência |
 |---|---|---|---|---|
-| `rabbitmq` | `rabbitmq:3-management-alpine` | `5672` (AMQP), `15672` (Web UI) | **Message Broker** para desacoplamento de eventos | `gerenciador_rabbitmq_data` |
-| `tasks-service` | `node:20-alpine` (multi-stage) | `3000` | CRUD de tarefas e **Produtor de Eventos AMQP** | — |
-| `notifications-service`| `node:20-alpine` (multi-stage) | `3002` | API de avisos e **Consumidor de Eventos AMQP** | — |
-| `users-service` | `node:20-alpine` (multi-stage) | `3001` | CRUD de usuários responsáveis pelas tarefas | — |
-| `tasks-db` | `postgres:16-alpine` | `5432` | Banco de dados independente do tasks-service | `gerenciador_tasks_db_data` |
-| `notifications-db` | `postgres:16-alpine` | `5433` | Banco de dados independente de notificações | `gerenciador_notifications_db_data` |
-| `users-db` | `postgres:16-alpine` | `5431` | Banco de dados independente do users-service | `gerenciador_users_db_data` |
+| `rabbitmq` | `rabbitmq:3-management-alpine` | `5672` (AMQP), `15672` (HTTP) | Intermediador de Mensagens (*Message Broker*) | `gerenciador_rabbitmq_data` |
+| `tasks-service` | `node:20-alpine` (multi-stage) | `3000` (HTTP) | API de Tarefas e Produtor de Eventos AMQP | — |
+| `notifications-service`| `node:20-alpine` (multi-stage) | `3002` (HTTP) | API de Notificações e Consumidor de Eventos AMQP | — |
+| `users-service` | `node:20-alpine` (multi-stage) | `3001` (HTTP) | API de Domínio de Usuários e Validação de Chaves | — |
+| `tasks-db` | `postgres:16-alpine` | `5432` (TCP) | Armazenamento Relacional Independente (Tarefas) | `gerenciador_tasks_db_data` |
+| `notifications-db` | `postgres:16-alpine` | `5433` (TCP) | Armazenamento Relacional Independente (Notificações) | `gerenciador_notifications_db_data` |
+| `users-db` | `postgres:16-alpine` | `5431` (TCP) | Armazenamento Relacional Independente (Usuários) | `gerenciador_users_db_data` |
 
 ---
 
-### Log de Demonstração do Fluxo Publicado e Consumido
+### Evidência Empírica de Execução e Convergência de Estado
 
-Execução validada ponta a ponta através do script automatizado `scripts/test-messaging.sh`:
+Registro de telemetria obtido via script de verificação formal `scripts/test-messaging.sh`:
 
 ```text
 ==============================================================================
@@ -156,127 +156,116 @@ Notificação persistida no banco: [
 
 ---
 
-### Como Rodar e Testar o Módulo 4
+### Protocolo de Reprodução Experimental
 
-#### 1. Iniciar toda a infraestrutura conteinerizada:
+#### 1. Orquestração da topologia conteinerizada:
 ```bash
 docker compose up --build -d
 ```
 
-#### 2. Executar o teste automatizado de mensageria:
-- **No Linux/macOS:**
+#### 2. Execução do procedimento de validação funcional:
+- **Ambiente POSIX (Linux/macOS):**
   ```bash
   ./scripts/test-messaging.sh
   ```
-- **No Windows 11 (PowerShell):**
+- **Ambiente Windows (PowerShell):**
   ```powershell
   .\scripts\test-messaging.ps1
   ```
 
-#### 3. Testar com Consumidor Standalone em Tempo Real (Opcional):
-Abra um terminal adicional para acompanhar a chegada de eventos diretamente no broker:
+#### 3. Monitoramento de consumo desacoplado em tempo real:
+Para atestar a recepção independente de eventos:
 ```bash
 node scripts/standalone-consumer.js
 ```
 
-#### 4. Acessar o Painel Web do RabbitMQ:
-Abra no navegador `http://localhost:15672` (Usuário: `guest`, Senha: `guest`) para visualizar a fila `tarefa_concluida`, taxas de entrega e conexões ativas.
+#### 4. Acesso à interface de telemetria do broker:
+Endpoint: `http://localhost:15672` (Credenciais padrão: `guest` / `guest`).
 
 ---
 
-### Análise e Comparação Técnica: Mensageria (RabbitMQ) vs. Streaming de Eventos (Kafka/Redpanda)
+### Análise Comparativa Formal: Mensageria (RabbitMQ) vs. Streaming de Eventos (Kafka/Redpanda)
 
 > [!NOTE]
-> Para aprofundamento teórico e diagramas detalhados, consulte o documento analítico completo:  
+> Para formulação teórica aprofundada, consulte o documento analítico dedicado:  
 > 📄 [docs/modulo-4-mensageria-e-streaming.md](file:///home/joao/Documentos/gerenciador-tarefas/docs/modulo-4-mensageria-e-streaming.md)
 
-#### 1. Diagrama de 3 Caixas (Mensageria Implementada)
+#### 1. Abstração Estrutural de 3 Elementos (Topologia AMQP Implementada)
 ```
 +--------------------+        +---------------------+        +-----------------------+
-|      PRODUTOR      |  AMQP  |    BROKER (FILA)    |  ACK   |      CONSUMIDOR       |
-|   (tasks-service)  | =====> | (RabbitMQ: 5672)    | =====> |(notifications-service)|
+|    NÓ PRODUTOR     |  AMQP  |   MESSAGE BROKER    |  ACK   |     NÓ CONSUMIDOR     |
+|  (tasks-service)   | =====> | (RabbitMQ: 5672)    | =====> | (notifications-serv.) |
 |                    |        | fila: tarefa_concl. |        |                       |
 +--------------------+        +---------------------+        +-----------------------+
 ```
 
-#### 2. Como esse cenário seria modelado com Streaming de Eventos (Apache Kafka / Redpanda):
-- **Log Imutável e Tópicos Particionados:** Ao invés de uma fila descartável onde as mensagens são apagadas após o processamento, haveria um tópico particionado único (`tarefas.ciclo-de-vida`). Cada evento (`tarefa_criada`, `tarefa_concluida`) seria gravado como um registro imutável com retention configurável (dias ou anos).
-- **Chave de Particionamento (*Partition Key*):** A chave seria o `task_id`, garantindo que todas as ações sobre uma mesma tarefa caiam na mesma partição, mantendo a ordem estrita dos acontecimentos.
-- **Múltiplos Consumidores com Offsets Independentes:**
-  - `notifications-service` (Consumer Group 1): consome para enviar alertas imediatos.
-  - `audit-service` (Consumer Group 2): armazena o histórico completo para conformidade e auditoria (LGPD).
-  - `analytics-service` (Consumer Group 3): processa métricas em tempo real (SLA, Lead Time, produtividade de equipes).
-  - `search-indexer` (Consumer Group 4): atualiza índices no Elasticsearch.
-- **Replay de Eventos (*Rewind*):** Novos microsserviços poderiam ser criados meses depois e simplesmente ler desde o **Offset 0** para reconstruir seu estado a partir de todo o histórico passado de eventos, algo impossível na mensageria tradicional.
+#### 2. Modelagem Alternativa sob o Paradigma de Streaming Distribuído:
+- **Estrutura de Commit Log Imutável:** Em contraposição às filas transientes do RabbitMQ (cujas mensagens são destruídas após a recepção do ACK), o modelo de streaming estrutura os eventos em um log ordenado, distribuído e imutável (`tarefas.ciclo-de-vida`). A durabilidade é governada por políticas temporais de retenção (dias, meses ou anos).
+- **Chave de Particionamento e Ordenação Determinística:** A adoção do identificador da entidade (`task_id`) como partition key assegura que eventos correlacionados convirjam para a mesma partição física, assegurando ordenação estrita per-entity.
+- **Topologia de Múltiplos Grupos Consumidores (*Consumer Groups*):**
+  - `grupo-notificacoes` (`notifications-service`): consumo reativo para sinalização imediata ao usuário.
+  - `grupo-auditoria` (`audit-service`): persistência contínua para trilhas de compliance e conformidade regulatória.
+  - `grupo-analytics` (`analytics-service`): processamento de fluxo em tempo real (métricas de Lead Time, SLA e taxa de vazão).
+  - `grupo-indexacao` (`search-indexer`): atualização contínua de índices invertidos de busca.
+- **Capacidade de Reprocessamento Histórico (*Event Replay*):** A descentralização do controle de leitura através de ponteiros de deslocamento (*offsets*) gerenciados pelo próprio consumidor viabiliza a reinicialização a partir do offset zero (*rewind*), permitindo que novos nós reconstruam seu estado derivado a partir de todo o histórico pregresso de eventos.
 
-#### 3. Tabela Comparativa Resumida:
+#### 3. Síntese Comparativa de Propriedades Distribuídas:
 
-| Critério | Mensageria Tradicional (RabbitMQ) | Streaming de Eventos (Kafka / Redpanda) |
+| Propriedade Arquitetural | Mensageria Tradicional (AMQP / RabbitMQ) | Streaming Distribuído (Kafka / Redpanda) |
 |---|---|---|
-| **Abstração** | Fila transitória de mensagens | Log imutável de eventos ordenado por partição |
-| **Pós-consumo** | Mensagem apagada após o `ack` | Preservada em disco segundo política de retenção |
-| **Múltiplos Consumidores** | Competing consumers ou filas duplicadas | Múltiplos Consumer Groups com ponteiros de *offset* independentes |
-| **Replay Histórico** | Não suportado nativamente | Suportado nativamente (basta resetar o *offset*) |
-| **Roteamento** | Altamente flexível (direct, topic, fanout, headers) | Roteamento por tópico e chave de partição |
-| **Throughput** | Alto (milhares a dezenas de milhares de msgs/s) | Massivo (milhões de eventos por segundo) |
-| **Complexidade** | Baixa a moderada, ideal para aplicações transacionais | Alta, ideal para Event Sourcing, Big Data e Analytics contínuo |
+| **Abstração Central** | Fila transitória de mensagens (*Message Queue*) | Log distribuído de eventos ordenado por partição |
+| **Destino do Dado pós-consumo** | Expurgo imediato após reconhecimento (`ack`) | Preservação em disco parametrizada por tempo ou volume |
+| **Consumo Concorrente** | Disputa de fila (*Competing Consumers*) ou replicação | Grupos de consumidores isolados com partições atribuídas |
+| **Replay / Reprocessamento** | Ausente por concepção de projeto | Suportado deterministicamente via reset de offset |
+| **Mecanismo de Roteamento** | Avançado em broker (direct, topic, fanout, headers) | Roteamento baseado em tópico e partição |
+| **Vazão Típica** | Milhares a dezenas de milhares de ops/s | Milhões de eventos/s via escritas sequenciais em disco |
+| **Sobrecarga Operacional** | Baixa a moderada, ideal para fluxos transacionais | Moderada a elevada, justificável em alta volumetria e analytics |
 
 #### 4. Justificativa Técnica:
-- **Por que RabbitMQ no Gerenciador de Tarefas:** Excelente casamento com a necessidade de processamento assíncrono de comandos/notificações transacionais com entrega garantida, baixa complexidade de implantação e UI de gestão integrada.
-- **Quando migrar para Streaming (Kafka/Redpanda):** Se o sistema evoluir para arquiteturas de *Event Sourcing*, necessitar de métricas analíticas em tempo real de grandes volumes de tarefas corporativas ou requerer trilha de auditoria retroativa com reprocessamento histórico.
+- **Adequação do RabbitMQ ao Domínio:** O domínio do Gerenciador de Tarefas apresenta característica transacional de comando e notificação, onde o ciclo de vida da mensagem encerra-se com o recebimento do alerta. O RabbitMQ provê entrega garantida (*at-least-once*) com mínima latência e reduzido custo operacional.
+- **Condicionantes para Migração a Streaming:** A substituição da camada de mensageria por Apache Kafka/Redpanda justificaria-se em cenários de alta volumetria (dezenas de milhares de transações concorrentes), adoção integral do padrão arquitetural de *Event Sourcing* e necessidade de auditoria analítica retrospectiva contínua.
 
 ---
 
-## Módulo 3 — Containers e Docker Compose
+## Módulo 3 — Empacotamento e Isolamento via Containers
 
-Neste módulo, todos os componentes do sistema foram empacotados em containers padronizados e orquestrados localmente de forma autônoma:
+Nesta etapa, a totalidade dos nós foi conteinerizada sob imagens imutáveis e orquestrada de forma determinística via Docker Compose:
 
-### O que foi implementado no Módulo 3:
-1. **Dockerfile individual para cada microsserviço:** Multi-stage build com `node:20-alpine`, execução sem root (`USER node`), healthchecks nativos.
-2. **Orquestração via `docker-compose.yml`:** 3 microsserviços + 3 bancos independentes Postgres 16 Alpine com volumes persistentes nomeados.
-3. **Scripts de teste de persistência:** `scripts/test-persistence.sh` e `scripts/test-persistence.ps1` comprovando a persistência dos dados após ciclo de `down` e `up`.
-
-### Comparação Técnica: Deploy Direto na Nuvem vs. Containers
-
-| Critério de Análise | Deploy Direto na Nuvem (Módulos 1 e 2) | Execução via Containers (Módulo 3) |
-|---|---|---|
-| **Ambiente de Execução** | Depende do runtime do provedor (Railway instalando Node via buildpack; Neon gerenciando instâncias Postgres). | Imagens imutáveis e isoladas via Docker (`node:20-alpine` e `postgres:16-alpine`), idênticas em qualquer máquina ou SO. |
-| **Reprodução Local** | Trabalhosa: exigia clonar o repo, instalar versão compatível de Node.js, rodar `npm install` em 3 pastas, abrir 3 terminais e configurar manualmente 3 bancos no Neon ou local. | Imediata: um único comando (`docker compose up --build -d`) sobe toda a topologia distribuída sem exigir Node ou Postgres no host. |
-| **Paridade Dev/Prod** | Baixa: discrepâncias de versão de Node, bibliotecas do SO ou portas no host podiam gerar comportamentos inesperados. | Alta: todo o ambiente é declarado em código (`Infrastructure as Code`). |
-| **Segurança e Privilégios** | Processos Node rodando com usuário padrão do host ou da VM. | Isolamento de namespace por container e execução com usuário não-root (`USER node`). |
-| **Persistência de Dados** | Delegada a serviço PaaS (Neon com storage em nuvem gerenciado). | Gerenciada explicitamente através de **Docker Volumes nomeados** independentes por microsserviço. |
+### Especificação do Módulo 3:
+1. **Dockerfiles Individuais:** Construção em múltiplos estágios (*multi-stage build*) com imagem `node:20-alpine`, execução sob usuário não-privilegiado (`USER node`) e sondas de integridade nativas.
+2. **Orquestração Declarativa:** 3 microsserviços e 3 bancos relacionais PostgreSQL 16 Alpine independentes vinculados a volumes persistentes nomeados.
+3. **Validação de Persistência:** Scripts [scripts/test-persistence.sh](file:///home/joao/Documentos/gerenciador-tarefas/scripts/test-persistence.sh) e [scripts/test-persistence.ps1](file:///home/joao/Documentos/gerenciador-tarefas/scripts/test-persistence.ps1) comprovando durabilidade dos dados após ciclos de destruição e recriação de containers.
 
 ---
 
-## Módulo 2 — Infraestrutura em Nuvem (Railway e Neon)
+## Módulo 2 — Decomposição em Microsserviços e Implantação em Nuvem
 
-A infraestrutura publicada na nuvem durante o Módulo 2 continua ativa e disponível:
-- **Railway:** responsável pela hospedagem e execução dos serviços `tasks-service`, `users-service` e `notifications-service`.
-- **Neon:** responsável pelo armazenamento dos dados, com bancos PostgreSQL independentes para cada microsserviço.
+Arquitetura distribuída decomposta em 3 microsserviços autônomos com persistência relacional isolada:
+- **tasks-service:** Gestão transacional de tarefas e coordenação de chamadas.
+- **users-service:** Domínio de usuários responsáveis.
+- **notifications-service:** Registro persistente de avisos.
 
-### URLs públicas (Railway)
-| Serviço | URL |
-|---|---|
-| `tasks-service` | https://tasks-service-production-dd13.up.railway.app |
-| `users-service` | https://users-service-production-9f90.up.railway.app |
-| `notifications-service` | https://notifications-service-production-c3c4.up.railway.app |
+Interfaces públicas legadas (Railway/Neon):
+- `tasks-service`: https://tasks-service-production-dd13.up.railway.app
+- `users-service`: https://users-service-production-9f90.up.railway.app
+- `notifications-service`: https://notifications-service-production-c3c4.up.railway.app
 
 ---
 
-## Endpoints das APIs
+## Interfaces e Endpoints
 
 - **tasks-service:** `GET /health`, `GET /health/dependencias`, `POST /tasks`, `GET /tasks`, `GET /tasks/:id`, `GET /tasks/:id/completo`, `PUT /tasks/:id`, `DELETE /tasks/:id`
 - **users-service:** `GET /health`, `POST /users`, `GET /users`, `GET /users/:id`, `PUT /users/:id`, `DELETE /users/:id`
 - **notifications-service:** `GET /health`, `POST /notifications`, `GET /notifications`, `GET /notifications/:id`
 
-## Variáveis de Ambiente
+## Variáveis de Ambiente da Topologia
 
-| Serviço | Variável | Descrição |
+| Componente | Variável | Descrição Técnica |
 |---|---|---|
-| Todos | `DATABASE_URL` | Connection string do banco PostgreSQL (Neon ou container local) |
-| Todos | `PORT` | Porta do serviço |
-| Todos | `PGSSL` | Define se exige SSL (`true` para Neon na nuvem; `false` para Docker local) |
-| tasks-service | `USERS_SERVICE_URL` | URL base do users-service |
-| tasks-service | `NOTIFICATIONS_SERVICE_URL` | URL base do notifications-service |
-| tasks-service | `REQUEST_TIMEOUT_MS` | Timeout das chamadas HTTP (padrão 5000 ms) |
-| tasks-service / notifications-service | `RABBITMQ_URL` | Connection string do broker AMQP (`amqp://guest:guest@rabbitmq:5672`) |
+| Todos | `DATABASE_URL` | String de conexão com o banco relacional PostgreSQL |
+| Todos | `PORT` | Porta de escuta da interface HTTP do processo |
+| Todos | `PGSSL` | Parâmetro booleano de TLS/SSL para conexões com o banco |
+| tasks-service | `USERS_SERVICE_URL` | URI base para resolução de dependências no users-service |
+| tasks-service | `NOTIFICATIONS_SERVICE_URL` | URI base para envio de notificações síncronas |
+| tasks-service | `REQUEST_TIMEOUT_MS` | Limite temporal para interrupção de requisições HTTP (5000 ms) |
+| tasks-service / notifications-service | `RABBITMQ_URL` | String de conexão com o daemon AMQP (`amqp://guest:guest@rabbitmq:5672`) |
