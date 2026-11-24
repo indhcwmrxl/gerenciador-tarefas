@@ -1,3 +1,4 @@
+[Assistir ao vídeo no YouTube](https://www.youtube.com/watch?v=aibYNKEt9sI)
 # Gerenciador de Tarefas
 
 Projeto incremental da disciplina de **Sistemas Distribuídos** (DCC/UERN).  
