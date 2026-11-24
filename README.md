@@ -18,11 +18,6 @@ No Módulo 4, a comunicação entre os microsserviços evoluiu para o modelo ass
 
 Também foi feita a análise conceitual de como esse mesmo cenário seria modelado usando **Streaming de Eventos** (Apache Kafka / Redpanda).
 
-### Vídeo de Demonstração (Módulo 4)
-
-> [!IMPORTANT]
-> **Link do Vídeo no YouTube (Não Listado):** `[INSERIR_LINK_AQUI]`  
-> *(Demonstração dos 7 containers rodando via Docker Compose, teste de mensageria com criação e conclusão de tarefa, logs do produtor e consumidor, e fila no painel do RabbitMQ)*.
 
 ---
 
